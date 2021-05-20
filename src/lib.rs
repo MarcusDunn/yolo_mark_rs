@@ -1,16 +1,15 @@
 #![forbid(unsafe_code)]
 #![cfg_attr(not(debug_assertions), deny(warnings))] // Forbid warnings in release builds
 #![warn(clippy::all, rust_2018_idioms)]
-#![feature(bindings_after_at)]
-
-mod app;
-pub use app::TemplateApp;
-
-// ----------------------------------------------------------------------------
-// When compiling for web:
 
 #[cfg(target_arch = "wasm32")]
 use eframe::wasm_bindgen::{self, prelude::*};
+
+pub use app::TemplateApp;
+
+mod app;
+// ----------------------------------------------------------------------------
+// When compiling for web:
 
 /// This is the entry-point for all the web-assembly.
 /// This is called once from the HTML.
