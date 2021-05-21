@@ -1,12 +1,14 @@
 use std::fs::{DirEntry, ReadDir};
 use std::path::Path;
 
-use eframe::egui::{ImageButton, Sense, TextureId, Vec2};
+use eframe::egui::{Pos2, Rect, TextureId, Vec2};
 use eframe::epi::Frame;
 use eframe::{egui, epi};
 use egui::Color32;
 use image::imageops::FilterType;
 use image::{DynamicImage, GenericImageView, Pixel};
+
+use crate::app::widgets::{BBox, DrawableImage};
 
 /// We derive Deserialize/Serialize so we can persist app state on shutdown.
 #[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
@@ -18,6 +20,8 @@ pub struct TemplateApp {
     current_image: DirEntry,
     #[cfg_attr(feature = "persistence", serde(skip))]
     _images_directory: ReadDir,
+    boxes: Vec<BBox>,
+    drag_start: Option<Pos2>,
 }
 
 impl Default for TemplateApp {
@@ -25,12 +29,15 @@ impl Default for TemplateApp {
         let mut images_directory = Path::new("data/img")
             .read_dir()
             .expect("data/img to be a directory");
+        let entry = images_directory.next().unwrap().unwrap();
         Self {
             // Example stuff:
             names: Vec::new(),
             name_field: String::from("new name!"),
-            current_image: images_directory.next().unwrap().unwrap(),
+            current_image: entry,
             _images_directory: images_directory,
+            boxes: Vec::new(),
+            drag_start: None,
         }
     }
 }
@@ -74,7 +81,11 @@ impl epi::App for TemplateApp {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            let Self { current_image, .. } = self;
+            let Self {
+                current_image,
+                boxes,
+                ..
+            } = self;
             let resized = image::open(current_image.path().as_path()).unwrap().resize(
                 ui.available_size().x as u32,
                 ui.available_size().y as u32,
@@ -86,14 +97,27 @@ impl epi::App for TemplateApp {
             };
 
             let texture_id = to_texture_id(frame, resized);
-            let response = ui.add(
-                ImageButton::new(texture_id, img_size)
-                    .sense(Sense::click_and_drag())
-                    .frame(false),
-            );
+            let response = ui.add(DrawableImage::new(texture_id, img_size, boxes));
+
             if response.drag_released() {
-                frame.tex_allocator().free(texture_id);
-                println!("{:?}", response.rect)
+                if let Some(start) = self.drag_start {
+                    println!("start {:?}", start);
+                    let end = response.interact_pointer_pos();
+                    let Vec2 { x, y } = end.map(|p| p - response.rect.min).unwrap();
+                    let adj_end = Pos2 { x, y };
+                    println!("adj_end: {:?}", adj_end);
+                    let bbox = Rect::from_two_pos(start, adj_end);
+                    let scaled = BBox::new(response.rect.size(), bbox).unwrap();
+                    println!("scaled {:?}", scaled);
+                    self.boxes.push(scaled);
+                    self.drag_start = None
+                }
+            } else if response.drag_started() {
+                let Rect { min, .. } = response.rect;
+                self.drag_start = response
+                    .interact_pointer_pos()
+                    .map(|pos| pos - min)
+                    .map(|Vec2 { x, y }| Pos2 { x, y });
             }
         });
     }
@@ -126,3 +150,5 @@ fn to_texture_id(tx_alloc: &'_ mut Frame<'_>, resized: DynamicImage) -> TextureI
             .as_slice(),
     )
 }
+
+mod widgets;
