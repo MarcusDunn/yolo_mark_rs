@@ -1,7 +1,7 @@
 use std::fs::{DirEntry, ReadDir};
 use std::path::Path;
 
-use eframe::egui::{Pos2, Rect, TextureId, Vec2};
+use eframe::egui::{Pos2, Rect, Stroke, TextureId, Vec2};
 use eframe::epi::Frame;
 use eframe::{egui, epi};
 use egui::Color32;
@@ -101,14 +101,11 @@ impl epi::App for TemplateApp {
 
             if response.drag_released() {
                 if let Some(start) = self.drag_start {
-                    println!("start {:?}", start);
                     let end = response.interact_pointer_pos();
                     let Vec2 { x, y } = end.map(|p| p - response.rect.min).unwrap();
                     let adj_end = Pos2 { x, y };
-                    println!("adj_end: {:?}", adj_end);
                     let bbox = Rect::from_two_pos(start, adj_end);
                     let scaled = BBox::new(response.rect.size(), bbox).unwrap();
-                    println!("scaled {:?}", scaled);
                     self.boxes.push(scaled);
                     self.drag_start = None
                 }
@@ -118,6 +115,21 @@ impl epi::App for TemplateApp {
                     .interact_pointer_pos()
                     .map(|pos| pos - min)
                     .map(|Vec2 { x, y }| Pos2 { x, y });
+            }
+            if response.dragged() {
+                if let Some(start) = self.drag_start {
+                    let end = response.interact_pointer_pos();
+                    let Vec2 { x, y } = end.map(|p| p - response.rect.min).unwrap();
+                    let adj_end = Pos2 { x, y };
+                    ui.painter().rect(
+                        Rect::from_two_pos(start, adj_end)
+                            .translate(response.rect.min.to_vec2())
+                            .intersect(response.rect),
+                        1.0,
+                        Color32::from_white_alpha(150),
+                        Stroke::default(),
+                    )
+                }
             }
         });
     }

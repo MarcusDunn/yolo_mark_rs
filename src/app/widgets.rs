@@ -22,7 +22,6 @@ impl Widget for DrawableImage<'_> {
             let selection = ui.visuals().selection;
 
             self.image.paint_at(ui, rect);
-            println!("rect in DrawableImage {:?}", rect.size());
 
             for bbox in self.boxes {
                 ui.painter().rect_stroke(
