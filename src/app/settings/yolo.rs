@@ -1,15 +1,29 @@
-use std::fs::{File, ReadDir};
+use std::fs::{DirEntry, File, ReadDir};
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 
 use crate::app::settings::{FileSetting, Setting};
 
+#[derive(Default)]
+pub struct Yolo {
+    pub img_dir: ImagesDirectorySetting,
+    pub names_file: NamesFileSetting,
+}
+
+impl Yolo {
+    pub fn is_valid(&self) -> bool {
+        self.img_dir.is_valid() && self.names_file.is_valid()
+    }
+}
+
 impl FileSetting for ImagesDirectorySetting {
-    type FileResult = ReadDir;
+    type FileResult = Vec<DirEntry>;
     type Error = std::io::Error;
 
     fn read_file(&self) -> Result<Self::FileResult, Self::Error> {
-        Path::new(self.images_dir.as_str()).read_dir()
+        Path::new(self.images_dir.as_str())
+            .read_dir()
+            .and_then(|r| r.collect())
     }
 
     fn backing_path_mut(&mut self) -> &mut String {
