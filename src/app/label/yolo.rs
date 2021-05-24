@@ -1,10 +1,10 @@
-use std::convert::{TryFrom, TryInto};
+use std::convert::{TryFrom};
 use std::fs::File;
-use std::io::{BufRead, BufReader, Error, Read, Write};
+use std::io::{BufRead, BufReader, Write};
 use std::num::{ParseFloatError, ParseIntError};
-use std::ops::Deref;
+
 use std::path::Path;
-use std::str::FromStr;
+
 
 use crate::app::label::yolo::bounding_box::BoundingBox;
 use crate::app::label::Labels;
@@ -27,21 +27,21 @@ impl TryFrom<File> for YoloLabels {
             .lines()
             .map(|l| {
                 l.map_err(YoloParseError::IoError)
-                    .and_then(|str| BoundingBox::try_from(str))
+                    .and_then(BoundingBox::try_from)
             })
             .collect::<Result<Vec<BoundingBox>, YoloParseError>>()
-            .map(|vec| YoloLabels::new(vec))
+            .map(YoloLabels::new)
     }
 }
 
 impl Labels for YoloLabels {
     type Label = BoundingBox;
 
-    fn add(&mut self, label: Self::Label) {
+    fn add(&mut self, _label: Self::Label) {
         todo!()
     }
 
-    fn from_file(path: &Path) -> Option<Self> {
+    fn from_file(_path: &Path) -> Option<Self> {
         todo!()
     }
 

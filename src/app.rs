@@ -53,10 +53,8 @@ impl epi::App for RsMark {
             } else {
                 let settings = &mut self.settings;
                 settings.as_page(ui);
-                if settings.is_valid() {
-                    if ui.button("Done").clicked() {
-                        self.desired_page = Page::Label
-                    }
+                if settings.is_valid() && ui.button("Done").clicked() {
+                    self.desired_page = Page::Label
                 }
             }
         });

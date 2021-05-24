@@ -1,4 +1,4 @@
-use std::fs::{DirEntry, File, ReadDir};
+use std::fs::{File, ReadDir};
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 
@@ -68,12 +68,10 @@ impl Setting for NamesFileSetting {
             } else {
                 "✅"
             }
+        } else if path.is_dir() {
+            "path is a directory"
         } else {
-            if path.is_dir() {
-                "path is a directory"
-            } else {
-                "path does not have an extension"
-            }
+            "path does not have an extension"
         })
     }
 }

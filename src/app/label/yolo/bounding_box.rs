@@ -34,7 +34,7 @@ impl TryFrom<String> for BoundingBox {
     type Error = YoloParseError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        if let [label, x, y, width, height] = value.split(" ").collect::<Vec<_>>().as_slice() {
+        if let [label, x, y, width, height] = value.split(' ').collect::<Vec<_>>().as_slice() {
             Ok(BoundingBox {
                 label: u32::from_str(label)?,
                 x: f64::from_str(x)?,
