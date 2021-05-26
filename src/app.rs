@@ -1,126 +1,112 @@
-use std::time::SystemTime;
+use std::convert::TryInto;
+use std::fs::ReadDir;
+use std::sync::atomic::{AtomicUsize, Ordering};
+pub use std::time::{Duration, SystemTime};
 
-use eframe::egui::{Color32, CtxRef, TextureId, Vec2};
+use eframe::egui::{CtxRef, Key, TextureId, Vec2};
 use eframe::epi::Frame;
 use eframe::{egui, epi};
-use image::{DynamicImage, GenericImageView, ImageError, Pixel};
 
-use crate::app::settings::yolo::Yolo;
-use crate::app::settings::{FileSetting, Setting, Settings};
-
-/// We derive Deserialize/Serialize so we can persist app state on shutdown.
-#[cfg_attr(feature = "persistence", derive(serde::Deserialize, serde::Serialize))]
-#[cfg_attr(feature = "persistence", serde(default))] // if we add new fields, give them default values when deserializing old state
+use crate::app::image_cache::{ImageCache, ImageLookup};
+use crate::app::image_file::ImageFile;
 
 pub struct RsMark {
-    desired_page: Page,
-    settings: Settings,
-    current_image_index: usize,
-    current_image: Option<TextureId>,
+    current_index: AtomicUsize,
+    images: Vec<ImageFile>,
+    names: Vec<String>,
+    image_cache: ImageCache,
+    current_image: Option<(TextureId, Vec2)>,
 }
 
+mod image_cache;
+mod image_file;
+
 impl RsMark {
-    pub fn yolo() -> RsMark {
+    pub fn yolo(directory: ReadDir, names: Vec<String>) -> RsMark {
+        let images = directory
+            .map(|r| r.expect("failed to read a directory entry"))
+            .map(|r| r.try_into())
+            .filter_map(|r| r.ok())
+            .collect::<Vec<_>>();
+        println!("found {} images!", images.len());
         RsMark {
-            desired_page: Page::Settings,
-            settings: Settings::yolo_default(),
-            current_image_index: 0,
+            current_index: AtomicUsize::new(0),
+            images,
+            names,
+            image_cache: ImageCache::new(Vec2::new(500.0, 500.0)),
             current_image: None,
         }
     }
-}
 
-#[derive(PartialEq)]
-enum Page {
-    Label,
-    Settings,
-}
+    pub fn handle_next(&mut self) {
+        let index = self.current_index.fetch_add(1, Ordering::AcqRel);
+        self.handle_new_image(index)
+    }
 
-mod settings;
+    pub fn handle_prev(&mut self) {
+        let index = self.current_index.fetch_sub(1, Ordering::AcqRel);
+        self.handle_new_image(index)
+    }
+
+    pub fn handle_new_image(&mut self, index: usize) {
+        self.current_image = None;
+        println!("on image {:?}, {:?}", index, self.images.get(index))
+    }
+}
 
 impl epi::App for RsMark {
     fn update(&mut self, ctx: &CtxRef, frame: &mut Frame<'_>) {
+        self.image_cache.update();
         egui::TopPanel::top("top panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 egui::menu::menu(ui, "File", |ui| {
                     if ui.button("Quit").clicked() {
                         frame.quit();
                     }
-                    if ui.button("Settings").clicked() {
-                        self.desired_page = Page::Settings
-                    }
                 });
-                if ui.button("next").clicked() {
-                    self.current_image = None;
-                    self.current_image_index = self
-                        .current_image_index
-                        .checked_add(1)
-                        .unwrap_or(usize::MAX)
+                if ui.button("Next").clicked() || ctx.input().key_pressed(Key::ArrowRight) {
+                    self.handle_next()
                 }
-                if ui.button("prev").clicked() {
-                    self.current_image = None;
-                    self.current_image_index = self.current_image_index.checked_sub(1).unwrap_or(0)
+                if ui.button("Prev").clicked() || ctx.input().key_pressed(Key::ArrowLeft) {
+                    self.handle_prev()
                 }
             })
         });
-
-        if self.desired_page == Page::Label && self.settings.is_valid() {
-            egui::CentralPanel::default().show(ctx, |ui| match &self.settings {
-                Settings::Yolo(Yolo { img_dir, .. }) => {
-                    if let Ok(file_result) = img_dir.read_file() {
-                        if let Some(curr_image) = &self.current_image {
-                            ui.image(*curr_image, ui.available_size());
-                        } else {
-                            if let Some(current_image) = file_result.get(self.current_image_index) {
-                                let start = std::time::SystemTime::now();
-                                println!("opening img");
-                                let image =
-                                    image::open(current_image.path()).expect("image to open");
-                                println!(
-                                    "done opening image {:?}",
-                                    SystemTime::now().duration_since(start)
-                                );
-                                let start = std::time::SystemTime::now();
-                                println!("mapping pixels");
-                                self.current_image = Some(
-                                    frame.tex_allocator().alloc_srgba_premultiplied(
-                                        (image.width() as usize, image.height() as usize),
-                                        image
-                                            .pixels()
-                                            .map(|(.., p)| {
-                                                let (r, g, b, a) = p.channels4();
-                                                Color32::from_rgba_premultiplied(r, g, b, a)
-                                            })
-                                            .collect::<Vec<_>>()
-                                            .as_slice(),
-                                    ),
-                                );
-                                println!(
-                                    "done mapping pixels {:?}",
-                                    SystemTime::now().duration_since(start)
-                                );
-                            } else {
-                            }
-                        }
-                    } else {
-                        self.desired_page = Page::Settings
+        egui::CentralPanel::default().show(ctx, |ui| {
+            if self.image_cache.set_size(ui.available_size()) {
+                self.handle_new_image(self.current_index.load(Ordering::Relaxed))
+            }
+            if let Some((texture_id, size)) = self.current_image {
+                ui.image(texture_id, size);
+            } else {
+                let get_result = self.image_cache.get(
+                    ImageLookup {
+                        index: self.current_index.load(Ordering::Relaxed),
+                    },
+                    self.images.as_slice(),
+                );
+                match get_result {
+                    None => {
+                        ui.label("damn I'm shit at coding");
+                    }
+                    Some(img) => {
+                        self.current_image = Some((
+                            frame
+                                .tex_allocator()
+                                .alloc_srgba_premultiplied(img.size_usize(), img.data.as_slice()),
+                            img.size_vec2(),
+                        ));
                     }
                 }
-            });
-        } else {
-            egui::CentralPanel::default().show(ctx, |ui| {
-                let settings = &mut self.settings;
-                settings.as_page(ui);
-                if settings.is_valid() && ui.button("Done").clicked() {
-                    self.desired_page = Page::Label
-                }
-            });
-        }
+            }
+        });
+    }
+
+    fn setup(&mut self, _ctx: &egui::CtxRef) {
+        self.handle_new_image(0);
     }
 
     fn name(&self) -> &str {
         "rs mark"
     }
 }
-
-mod label;

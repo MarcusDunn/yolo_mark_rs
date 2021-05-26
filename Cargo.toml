@@ -12,15 +12,8 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 eframe = "0.12.0" # Gives us egui, epi and web+native backends
 image = { version = "0.23.14", features = ["jpeg"] }
-anyhow = "1.0.40"
-
-serde = { version = "1", features = ["derive"], optional = true }
-
-[features]
-default = []
-http = ["eframe/http"] # Enable if you want to do http requests
-persistence = ["eframe/persistence", "serde"] # Enable if you want to persist app state on shutdown
-
+crossbeam = "0.8.0"
+num_cpus = "1.13.0"
 [profile.release]
 opt-level = 2 # fast and small wasm
 
