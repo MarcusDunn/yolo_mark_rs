@@ -1,9 +1,9 @@
 use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::fs::DirEntry;
-use std::path::{Path, PathBuf};
+use std::path::{PathBuf};
 
-use image::{DynamicImage, ImageError, Pixels};
+use image::{DynamicImage, ImageError};
 
 static SUPPORTED_IMAGE_TYPES: [&str; 3] = ["jpg", "JPG", "JPEG"];
 
@@ -14,7 +14,6 @@ pub struct ImageFile(PathBuf);
 pub enum ImageFileError {
     NotAFile,
     NotAnImage,
-    ReadError,
 }
 
 impl TryFrom<DirEntry> for ImageFile {

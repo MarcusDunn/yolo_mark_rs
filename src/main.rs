@@ -6,8 +6,9 @@ use std::env::Args;
 use std::ffi::OsStr;
 use std::fmt::{Display, Formatter};
 use std::fs::{File, ReadDir};
-use std::io::{BufRead, BufReader, Error};
-use std::ops::Add;
+use std::io::{BufRead, BufReader};
+
+use egui_template::KeyboardMapping;
 use std::path::Path;
 use std::{env, fmt};
 
@@ -17,7 +18,7 @@ use std::{env, fmt};
 fn main() {
     match wrangle_args(env::args()) {
         Ok((directory, names)) => {
-            let app = egui_template::RsMark::yolo(directory, names);
+            let app = egui_template::RsMark::yolo(directory, names, KeyboardMapping::default());
             let native_options = eframe::NativeOptions::default();
             eframe::run_native(Box::new(app), native_options);
         }
@@ -84,7 +85,7 @@ fn wrangle_args(args: Args) -> Result<(ReadDir, Vec<String>), ArgumentError> {
             let names = match File::open(names) {
                 Ok(f) => match BufReader::new(f).lines().collect::<Result<Vec<_>, _>>() {
                     Ok(lines) => {
-                        if lines.iter().all(|line| !line.trim_end().contains(" ")) {
+                        if lines.iter().all(|line| !line.trim_end().contains(' ')) {
                             lines
                         } else {
                             return Err(ArgumentError::ReadError(format!(

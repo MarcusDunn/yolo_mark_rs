@@ -5,6 +5,7 @@
 #[cfg(target_arch = "wasm32")]
 use eframe::wasm_bindgen::{self, prelude::*};
 
+pub use app::keyboard_mapping::KeyboardMapping;
 pub use app::RsMark;
 
 mod app;

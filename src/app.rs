@@ -3,14 +3,47 @@ use std::fs::ReadDir;
 use std::sync::atomic::{AtomicUsize, Ordering};
 pub use std::time::{Duration, SystemTime};
 
-use eframe::egui::{CtxRef, Key, TextureId, Vec2};
+use eframe::egui::{CtxRef, TextureId, Vec2};
 use eframe::epi::Frame;
 use eframe::{egui, epi};
 
 use crate::app::image_cache::{ImageCache, ImageLookup};
 use crate::app::image_file::ImageFile;
+use crate::app::keyboard_mapping::KeyboardMapping;
+
+pub mod keyboard_mapping {
+    use std::collections::BTreeMap;
+    use std::iter::FromIterator;
+    use std::ops::Index;
+
+    use eframe::egui::Key;
+
+    use crate::app::Action;
+
+    pub struct KeyboardMapping(BTreeMap<Action, Key>);
+
+    impl Index<Action> for KeyboardMapping {
+        type Output = Key;
+
+        fn index(&self, index: Action) -> &Self::Output {
+            self.0
+                .get(&index)
+                .unwrap_or_else(|| panic!("key not bound for {:?}", index))
+        }
+    }
+
+    impl Default for KeyboardMapping {
+        fn default() -> Self {
+            Self(BTreeMap::from_iter(vec![
+                (Action::NextImage, Key::ArrowRight),
+                (Action::PrevImage, Key::ArrowLeft),
+            ]))
+        }
+    }
+}
 
 pub struct RsMark {
+    key_map: KeyboardMapping,
     current_index: AtomicUsize,
     images: Vec<ImageFile>,
     names: Vec<String>,
@@ -18,11 +51,17 @@ pub struct RsMark {
     current_image: Option<(TextureId, Vec2)>,
 }
 
+#[derive(Ord, PartialOrd, Eq, PartialEq, Copy, Clone, Debug)]
+pub enum Action {
+    NextImage,
+    PrevImage,
+}
+
 mod image_cache;
 mod image_file;
 
 impl RsMark {
-    pub fn yolo(directory: ReadDir, names: Vec<String>) -> RsMark {
+    pub fn yolo(directory: ReadDir, names: Vec<String>, key_map: KeyboardMapping) -> RsMark {
         let images = directory
             .map(|r| r.expect("failed to read a directory entry"))
             .map(|r| r.try_into())
@@ -30,6 +69,7 @@ impl RsMark {
             .collect::<Vec<_>>();
         println!("found {} images!", images.len());
         RsMark {
+            key_map,
             current_index: AtomicUsize::new(0),
             images,
             names,
@@ -64,14 +104,14 @@ impl epi::App for RsMark {
                         frame.quit();
                     }
                 });
-                if ui.button("Next").clicked() || ctx.input().key_pressed(Key::ArrowRight) {
-                    self.handle_next()
-                }
-                if ui.button("Prev").clicked() || ctx.input().key_pressed(Key::ArrowLeft) {
-                    self.handle_prev()
-                }
             })
         });
+        if ctx.input().key_pressed(self.key_map[Action::NextImage]) {
+            self.handle_next()
+        }
+        if ctx.input().key_pressed(self.key_map[Action::PrevImage]) {
+            self.handle_prev()
+        }
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.image_cache.set_size(ui.available_size()) {
                 self.handle_new_image(self.current_index.load(Ordering::Relaxed))
