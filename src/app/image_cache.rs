@@ -2,6 +2,7 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::thread;
+use std::time::Duration;
 
 use crossbeam::channel::TryRecvError;
 use crossbeam::channel::{Receiver, Sender};
@@ -10,13 +11,15 @@ use image::imageops::FilterType;
 use image::{GenericImageView, ImageError};
 
 use crate::app::image_file::{ImageFile, ImageFileError};
-use std::time::Duration;
+
+type PixelsMessage = Result<(ImageLookup, ImageData), ImageParseError>;
+type ImageMessage = (ImageLookup, PathBuf);
 
 pub struct ImageCache {
     size: Arc<Mutex<Vec2>>,
     cache: BTreeMap<ImageLookup, ImageData>,
-    pixel_receiver: Receiver<Result<(ImageLookup, ImageData), ImageParseError>>,
-    image_sender: Sender<(ImageLookup, PathBuf)>,
+    pixel_receiver: Receiver<PixelsMessage>,
+    image_sender: Sender<ImageMessage>,
     queued: BTreeSet<ImageLookup>,
 }
 
@@ -51,10 +54,8 @@ pub struct ImageLookup {
 
 impl ImageCache {
     pub fn new(size: Vec2) -> ImageCache {
-        let (im_tx, im_rx) = crossbeam::channel::bounded::<(ImageLookup, PathBuf)>(num_cpus::get());
-        let (px_tx, px_rx) = crossbeam::channel::bounded::<
-            Result<(ImageLookup, ImageData), ImageParseError>,
-        >(num_cpus::get());
+        let (im_tx, im_rx) = crossbeam::channel::bounded::<ImageMessage>(num_cpus::get());
+        let (px_tx, px_rx) = crossbeam::channel::bounded::<PixelsMessage>(num_cpus::get());
         let arc = Arc::new(Mutex::new(size));
         for i in 1..=num_cpus::get() {
             let im_rx_clone = im_rx.clone();
