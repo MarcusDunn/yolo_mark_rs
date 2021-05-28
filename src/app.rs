@@ -17,6 +17,8 @@ mod image_file;
 pub mod keyboard_mapping;
 
 pub struct RsMark {
+    // index of box in current_boxes
+    selected_box: Option<usize>,
     key_map: KeyboardMapping,
     current_index: AtomicUsize,
     images: Vec<ImageFile>,
@@ -38,6 +40,7 @@ impl RsMark {
             .collect::<Vec<_>>();
         println!("found {} images!", images.len());
         RsMark {
+            selected_box: None,
             key_map,
             current_index: AtomicUsize::new(0),
             images,
@@ -79,23 +82,31 @@ impl epi::App for RsMark {
 
 impl RsMark {
     fn handle_key_presses(&mut self, ctx: &CtxRef) {
-        if ctx.input().key_pressed(self.key_map[Action::NextImage]) {
+        if self.key_map.is_triggered(Action::NextImage, ctx) {
             self.handle_index_change(1)
         }
-        if ctx.input().key_pressed(self.key_map[Action::PrevImage]) {
+        if self.key_map.is_triggered(Action::PrevImage, ctx) {
             self.handle_index_change(-1)
         }
-        if ctx.input().key_pressed(self.key_map[Action::NextName]) {
+        if self.key_map.is_triggered(Action::NextImage, ctx) {
             self.selected_name += 1;
             if self.selected_name >= self.names.len() {
                 self.selected_name = 0;
             }
         }
-        if ctx.input().key_pressed(self.key_map[Action::PrevName]) {
+        if self.key_map.is_triggered(Action::PrevImage, ctx) {
             self.selected_name = if self.selected_name == 0 {
                 self.names.len() - 1
             } else {
                 self.selected_name - 1
+            }
+        }
+        if let Some(box_inx) = self.selected_box {
+            if self.key_map.is_triggered(Action::RemoveBox, ctx) {
+                self.current_boxes.remove(box_inx);
+            }
+            if self.key_map.is_triggered(Action::DragBox, ctx) {
+                println!("drag not implemented yet")
             }
         }
     }
@@ -166,24 +177,25 @@ impl RsMark {
             },
         };
         let painter = &mut ui.painter_at(rect);
-
-        let mut covered_box: Option<&BBox> = None;
-        for bbox in &self.current_boxes {
+        self.selected_box = None;
+        for (i, bbox) in self.current_boxes.iter().enumerate() {
             let rect = bbox.draw(painter, 100);
             bbox.draw_text(painter, &self.names, rect, 100);
             if ui.rect_contains_pointer(rect) {
-                if let Some(selected) = covered_box {
-                    if selected.width > bbox.width && selected.height > bbox.height {
-                        covered_box = Some(bbox);
+                if let Some(selected) = self.selected_box {
+                    if self.current_boxes[selected].width > bbox.width
+                        && self.current_boxes[selected].width > bbox.height
+                    {
+                        self.selected_box = Some(i);
                     }
                 } else {
-                    covered_box = Some(bbox)
+                    self.selected_box = Some(i)
                 }
             }
         }
-        if let Some(bbox) = covered_box {
-            let rect = bbox.draw(painter, 0);
-            bbox.draw_text(painter, &self.names, rect, 0);
+        if let Some(bbox) = self.selected_box {
+            let rect = self.current_boxes[bbox].draw(painter, 0);
+            self.current_boxes[bbox].draw_text(painter, &self.names, rect, 0);
         }
     }
 }

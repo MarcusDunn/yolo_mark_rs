@@ -5,7 +5,7 @@ use std::fmt::{Debug, Display, Formatter};
 use std::num::{ParseFloatError, ParseIntError};
 
 use eframe::egui::color::Hsva;
-use eframe::egui::{Align2, Color32, Painter, Pos2, Rect, Response, Stroke, TextStyle, Vec2};
+use eframe::egui::{Align2, Color32, Painter, Pos2, Rect, Response, Stroke, TextStyle, Vec2, PointerState};
 use rand::Rng;
 use rand_chacha::rand_core::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -88,6 +88,12 @@ pub struct BBox {
     pub height: f32,
     pub x: f32,
     pub y: f32,
+}
+
+impl BBox {
+    pub(crate) fn drag(&self, p0: &PointerState) {
+        todo!()
+    }
 }
 
 impl BBox {
