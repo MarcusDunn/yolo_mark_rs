@@ -7,10 +7,10 @@ use std::ffi::OsStr;
 use std::fmt::{Display, Formatter};
 use std::fs::{File, ReadDir};
 use std::io::{BufRead, BufReader};
-
-use egui_template::KeyboardMapping;
 use std::path::Path;
 use std::{env, fmt};
+
+use egui_template::KeyboardMapping;
 
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
@@ -72,12 +72,7 @@ fn wrangle_args(args: Args) -> Result<(ReadDir, Vec<String>), ArgumentError> {
                 "{} is not a file",
                 names_path
             )))
-        } else if names.extension() != Some(OsStr::new("names")) {
-            Err(ArgumentError::InvalidFileType(format!(
-                "{} is not a names file",
-                names_path
-            )))
-        } else {
+        } else if names.extension() == Some(OsStr::new("names")) {
             let images_directory = match dir.read_dir() {
                 Ok(dir) => dir,
                 Err(err) => return Err(ArgumentError::ReadError(err.to_string())),
@@ -99,6 +94,11 @@ fn wrangle_args(args: Args) -> Result<(ReadDir, Vec<String>), ArgumentError> {
                 Err(err) => return Err(ArgumentError::ReadError(err.to_string())),
             };
             Ok((images_directory, names))
+        } else {
+            Err(ArgumentError::InvalidFileType(format!(
+                "{} is not a names file",
+                names_path
+            )))
         }
     } else {
         Err(ArgumentError::InvalidNumber(format!(

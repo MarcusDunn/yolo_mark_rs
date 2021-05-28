@@ -14,6 +14,9 @@ eframe = "0.12.0" # Gives us egui, epi and web+native backends
 image = { version = "0.23.14", features = ["jpeg"] }
 crossbeam = "0.8.0"
 num_cpus = "1.13.0"
+rand_chacha = "0.3.0"
+rand = "0.8.3"
+
 [profile.release]
 opt-level = 2 # fast and small wasm
 
