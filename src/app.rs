@@ -156,8 +156,8 @@ impl RsMark {
                         let pos2 = drag_srt.add(drag_end.to_vec2());
                         match BBox::from_two_points(
                             self.selected_name,
-                            drag_srt,
-                            pos2,
+                            drag_srt - img_resp.rect.min.to_vec2(),
+                            pos2 - img_resp.rect.min.to_vec2(),
                             img_resp.rect.size(),
                         ) {
                             Ok(bbox) => self.current_boxes.push(bbox),
@@ -205,8 +205,8 @@ impl RsMark {
         if let (Some(drag_start), Some(drag_diff)) = (self.drag_start, self.drag_diff) {
             if let Ok(bbox) = BBox::from_two_points(
                 self.selected_name,
-                drag_start,
-                drag_start + drag_diff.to_vec2(),
+                drag_start - rect.min.to_vec2(),
+                drag_start + drag_diff.to_vec2() - rect.min.to_vec2(),
                 rect.size(),
             ) {
                 bbox.draw(painter, 0, true);
