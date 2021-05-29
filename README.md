@@ -18,8 +18,7 @@ So I've resolved these and this is the result.
 
 - [ ] run from web server
 
-- [ ] abstract out traits to allow other export formats and annotation formats by third parties
-
+- [ ] abstract out traits to allow other export formats and annotation styles
 
 # Running
 
