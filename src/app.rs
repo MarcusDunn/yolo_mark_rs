@@ -218,7 +218,7 @@ impl RsMark {
             } else {
                 let get_result = self.image_cache.get(
                     ImageLookup {
-                        index: self.current_index.load(Ordering::Relaxed),
+                        index: self.current_index.load(Ordering::SeqCst),
                     },
                     self.images.as_slice(),
                 );
