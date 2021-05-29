@@ -219,6 +219,16 @@ impl RsMark {
         };
         let painter = &mut ui.painter_at(rect);
         self.selected_box = None;
+        if let (Some(drag_start), Some(drag_diff)) = (self.drag_start, self.drag_diff) {
+            if let Ok(bbox) = BBox::from_two_points(
+                self.selected_name,
+                drag_start,
+                drag_start + drag_diff.to_vec2(),
+                rect.size(),
+            ) {
+                bbox.draw(painter, 0, true);
+            }
+        }
         for (i, bbox) in self.current_boxes.iter().enumerate() {
             let rect = bbox.draw(painter, 100, false);
             bbox.draw_text(painter, &self.names, rect, 100);

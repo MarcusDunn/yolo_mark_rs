@@ -138,12 +138,12 @@ impl BBox {
         if selected {
             let color = Color32::from_white_alpha(255);
             let rect = self.with_respect_to(painter.clip_rect());
-            BBox::draw_colored_box_outline(painter, color, rect, 5.0);
+            BBox::draw_colored_box_outline(painter, color, rect, 2.0);
             rect
         } else {
             let color = self.color_w_alpha(alpha);
             let rect = self.with_respect_to(painter.clip_rect());
-            BBox::draw_colored_box_outline(painter, color, rect, 3.0);
+            BBox::draw_colored_box_outline(painter, color, rect, 1.0);
             rect
         }
     }
