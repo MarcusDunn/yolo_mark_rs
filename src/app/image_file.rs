@@ -1,9 +1,12 @@
 use std::convert::TryFrom;
 use std::ffi::OsStr;
-use std::fs::DirEntry;
-use std::path::{PathBuf};
+use std::fs::{DirEntry, File};
+use std::io::{BufRead, BufReader, LineWriter, Write};
+use std::path::PathBuf;
 
 use image::{DynamicImage, ImageError};
+
+use crate::app::bbox::BBox;
 
 static SUPPORTED_IMAGE_TYPES: [&str; 3] = ["jpg", "JPG", "JPEG"];
 
@@ -25,6 +28,52 @@ impl TryFrom<DirEntry> for ImageFile {
 }
 
 impl ImageFile {
+    pub fn load_labels(&self) -> Vec<BBox> {
+        let parent = match self.0.parent() {
+            None => panic!("oh god oh fuck where is the file"),
+            Some(p) => p.to_str().unwrap(),
+        };
+        let txt_path = match self.0.file_stem().and_then(|stem| stem.to_str()) {
+            None => {
+                println!("heck");
+                return Vec::new();
+            }
+            Some(stem) => format!("{}/{}.txt", parent, stem),
+        };
+        match File::open(txt_path) {
+            Ok(f) => BufReader::new(f)
+                .lines()
+                .map(|l| BBox::try_from(l.unwrap().as_str()))
+                .collect::<Result<Vec<BBox>, _>>()
+                .unwrap_or_default(),
+            Err(_) => {
+                println!("heck");
+                Vec::new()
+            }
+        }
+    }
+
+    pub fn save_labels(&self, labels: &[BBox]) -> std::io::Result<()> {
+        let parent = match self.0.parent() {
+            None => panic!("oh god oh fuck where is the file"),
+            Some(p) => p.to_str().unwrap(),
+        };
+        let txt_path = match self.0.file_stem().and_then(|stem| stem.to_str()) {
+            None => panic!("oh god oh fuck where is the file"),
+            Some(stem) => format!("{}/{}.txt", parent, stem),
+        };
+        let f = File::with_options()
+            .create(true)
+            .write(true)
+            .open(txt_path)?;
+        let lw = &mut LineWriter::new(f);
+        for bbox in labels {
+            lw.write_all(bbox.yolo_format().as_bytes())?;
+            lw.write_all(b"\n")?;
+        }
+        Ok(())
+    }
+
     pub fn as_image(&self) -> Result<DynamicImage, ImageError> {
         match image::open(self.0.as_path()) {
             Ok(img) => Ok(img),

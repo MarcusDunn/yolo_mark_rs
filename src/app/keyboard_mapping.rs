@@ -69,9 +69,7 @@ impl Index<Action> for KeyboardMapping {
     type Output = EventTrigger;
 
     fn index(&self, index: Action) -> &Self::Output {
-        self.0
-            .get(&index)
-            .unwrap_or_else(|| panic!("key not bound for {:?}", index))
+        &self.0[&index]
     }
 }
 

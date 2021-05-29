@@ -5,7 +5,7 @@ use std::fmt::{Debug, Display, Formatter};
 use std::num::{ParseFloatError, ParseIntError};
 
 use eframe::egui::color::Hsva;
-use eframe::egui::{Align2, Color32, Painter, Pos2, Rect, Response, Stroke, TextStyle, Vec2, PointerState};
+use eframe::egui::{Align2, Color32, Painter, Pos2, Rect, Stroke, TextStyle, Vec2};
 use rand::Rng;
 use rand_chacha::rand_core::SeedableRng;
 use rand_chacha::ChaCha8Rng;
@@ -75,11 +75,11 @@ impl Display for BBox {
             y,
             ..
         } = self;
-        write!(f, "{} {} {} {} {}", name, width, height, x, y)
+        write!(f, "{} {} {} {} {}", name, x, y, width, height)
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BBox {
     no_init_from_fields: (),
     pub color: [u8; 3],
@@ -91,8 +91,33 @@ pub struct BBox {
 }
 
 impl BBox {
-    pub(crate) fn drag(&self, p0: &PointerState) {
-        todo!()
+    pub fn yolo_format(&self) -> String {
+        self.to_string()
+    }
+
+    pub(crate) fn from_two_points(
+        name: usize,
+        Pos2 {
+            x: box_x1,
+            y: box_y1,
+        }: Pos2,
+        Pos2 {
+            x: box_x2,
+            y: box_y2,
+        }: Pos2,
+        Vec2 { x: img_w, y: img_h }: Vec2,
+    ) -> Result<BBox, BBoxError> {
+        let abs_x = dbg!((box_x1 + box_x2) / 2.0);
+        let abs_y = dbg!((box_y1 + box_y2) / 2.0);
+        let abs_w = dbg!((box_x1 - box_x2).abs());
+        let abs_h = dbg!((box_y1 - box_y2).abs());
+
+        let rel_width = dbg!(abs_w / img_w);
+        let rel_height = dbg!(abs_h / img_h);
+        let rel_x = dbg!(abs_x / img_w);
+        let rel_y = dbg!(abs_y / img_h);
+
+        BBox::new(name, rel_width, rel_height, rel_x, rel_y)
     }
 }
 
@@ -109,11 +134,18 @@ impl BBox {
 }
 
 impl BBox {
-    pub(crate) fn draw(&self, painter: &mut Painter, alpha: u8) -> Rect {
-        let color = self.color_w_alpha(alpha);
-        let rect = self.with_respect_to(painter.clip_rect());
-        BBox::draw_colored_box_outline(painter, color, rect, 3.0);
-        rect
+    pub(crate) fn draw(&self, painter: &mut Painter, alpha: u8, selected: bool) -> Rect {
+        if selected {
+            let color = Color32::from_white_alpha(255);
+            let rect = self.with_respect_to(painter.clip_rect());
+            BBox::draw_colored_box_outline(painter, color, rect, 5.0);
+            rect
+        } else {
+            let color = self.color_w_alpha(alpha);
+            let rect = self.with_respect_to(painter.clip_rect());
+            BBox::draw_colored_box_outline(painter, color, rect, 3.0);
+            rect
+        }
     }
 
     fn color_w_alpha(&self, alpha: u8) -> Color32 {
@@ -182,7 +214,14 @@ impl BBox {
 impl BBox {
     fn colour(name: usize) -> [u8; 3] {
         let mut rng = ChaCha8Rng::seed_from_u64(name as u64);
-        Hsva::from_srgba_premultiplied([rng.gen(), 255, 255, 0]).to_srgb()
+        let h = rng.gen::<u8>() as f32 / 255.0;
+        Hsva {
+            h,
+            s: 1.0,
+            v: 1.0,
+            a: 0 as f32,
+        }
+        .to_srgb()
     }
 
     pub fn new(name: usize, width: f32, height: f32, x: f32, y: f32) -> Result<BBox, BBoxError> {
@@ -236,4 +275,41 @@ impl BBox {
     //     )
     //     .expect("image_size is too small for that box")
     // }
+}
+
+#[cfg(test)]
+mod tests {
+    use quickcheck::{Arbitrary, Gen};
+    use quickcheck_macros::quickcheck;
+
+    use super::*;
+
+    #[quickcheck]
+    fn from_line_and_to_line_are_opposite(bbox: BBox) -> bool {
+        let BBox {
+            color,
+            name,
+            width,
+            height,
+            x,
+            y,
+            ..
+        } = BBox::try_from(bbox.to_string().as_str()).unwrap();
+        color == bbox.color
+            && name == bbox.name
+            && width > bbox.width - 0.001
+            && height > bbox.height - 0.001
+            && x > bbox.x - 0.001
+            && y > bbox.y - 0.001
+    }
+
+    impl Arbitrary for BBox {
+        fn arbitrary(g: &mut Gen) -> Self {
+            let w = u8::arbitrary(g) as f32 / 255.0;
+            let h = u8::arbitrary(g) as f32 / 255.0;
+            let x = u8::arbitrary(g) as f32 / 255.0;
+            let y = u8::arbitrary(g) as f32 / 255.0;
+            BBox::new(usize::arbitrary(g), w, h, x, y).unwrap()
+        }
+    }
 }

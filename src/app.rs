@@ -1,9 +1,10 @@
 use std::convert::TryInto;
 use std::fs::ReadDir;
+use std::ops::Add;
 use std::sync::atomic::{AtomicUsize, Ordering};
 pub use std::time::{Duration, SystemTime};
 
-use eframe::egui::{CtxRef, Pos2, Rect, TextureId, Ui, Vec2};
+use eframe::egui::{CtxRef, ImageButton, Pos2, Rect, Sense, TextureId, Ui, Vec2};
 use eframe::epi::Frame;
 use eframe::{egui, epi};
 
@@ -27,6 +28,8 @@ pub struct RsMark {
     image_cache: ImageCache,
     current_image: Option<(TextureId, Vec2)>,
     current_boxes: Vec<BBox>,
+    drag_start: Option<Pos2>,
+    drag_diff: Option<Pos2>,
 }
 
 mod bbox;
@@ -48,21 +51,31 @@ impl RsMark {
             selected_name: 0,
             image_cache: ImageCache::new(Vec2::new(500.0, 500.0)),
             current_image: None,
-            current_boxes: vec![
-                BBox::new(1, 0.9, 0.8, 0.5, 0.5).expect("invalid box"),
-                BBox::new(1, 0.5, 0.5, 0.4, 0.6).expect("invalid box"),
-            ],
+            current_boxes: Vec::new(),
+            drag_start: None,
+            drag_diff: None,
         }
     }
 
     pub fn handle_index_change(&mut self, incr: isize) {
-        if incr.is_negative() {
+        let index = if incr.is_negative() {
             self.current_index
-                .fetch_sub(incr.abs() as usize, Ordering::AcqRel);
+                .fetch_sub(incr.abs() as usize, Ordering::SeqCst)
         } else {
             self.current_index
-                .fetch_add(incr.abs() as usize, Ordering::AcqRel);
-        }
+                .fetch_add(incr.abs() as usize, Ordering::SeqCst)
+        };
+        self.images[index]
+            .save_labels(self.current_boxes.as_slice())
+            .unwrap_or_else(|err| panic!("error occurred while writing label {}", err));
+        self.current_boxes = self
+            .images
+            .get((index as isize + incr) as usize)
+            .unwrap_or_else(|| {
+                self.current_index.store(index, Ordering::SeqCst);
+                &self.images[index]
+            })
+            .load_labels();
         self.current_image = None;
     }
 }
@@ -88,13 +101,13 @@ impl RsMark {
         if self.key_map.is_triggered(Action::PrevImage, ctx) {
             self.handle_index_change(-1)
         }
-        if self.key_map.is_triggered(Action::NextImage, ctx) {
+        if self.key_map.is_triggered(Action::NextName, ctx) {
             self.selected_name += 1;
             if self.selected_name >= self.names.len() {
                 self.selected_name = 0;
             }
         }
-        if self.key_map.is_triggered(Action::PrevImage, ctx) {
+        if self.key_map.is_triggered(Action::PrevName, ctx) {
             self.selected_name = if self.selected_name == 0 {
                 self.names.len() - 1
             } else {
@@ -138,10 +151,38 @@ impl RsMark {
     fn display_images(&mut self, ctx: &CtxRef, frame: &mut Frame<'_>) {
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.image_cache.set_size(ui.available_size()) {
-                self.current_image = None
+                self.handle_index_change(0)
             }
             if let Some((texture_id, size)) = self.current_image {
-                ui.image(texture_id, size);
+                let img = ImageButton::new(texture_id, size)
+                    .sense(Sense::click_and_drag())
+                    .frame(false);
+                let img_resp = ui.add(img);
+
+                if img_resp.drag_started() {
+                    self.drag_start = img_resp.interact_pointer_pos();
+                    self.drag_diff = Some(Pos2::ZERO)
+                }
+                if let Some(curr_drag_diff) = self.drag_diff {
+                    self.drag_diff = Some(curr_drag_diff + img_resp.drag_delta())
+                }
+                if img_resp.drag_released() {
+                    if let (Some(drag_srt), Some(drag_end)) = (self.drag_start, self.drag_diff) {
+                        let pos2 = drag_srt.add(drag_end.to_vec2());
+                        match BBox::from_two_points(
+                            self.selected_name,
+                            drag_srt,
+                            pos2,
+                            img_resp.rect.size(),
+                        ) {
+                            Ok(bbox) => self.current_boxes.push(bbox),
+                            Err(err) => println!("error creating box {}", err),
+                        }
+                    }
+                    self.drag_diff = None;
+                    self.drag_start = None;
+                }
+
                 self.paint_boxes(&ui, size)
             } else {
                 let get_result = self.image_cache.get(
@@ -179,7 +220,7 @@ impl RsMark {
         let painter = &mut ui.painter_at(rect);
         self.selected_box = None;
         for (i, bbox) in self.current_boxes.iter().enumerate() {
-            let rect = bbox.draw(painter, 100);
+            let rect = bbox.draw(painter, 100, false);
             bbox.draw_text(painter, &self.names, rect, 100);
             if ui.rect_contains_pointer(rect) {
                 if let Some(selected) = self.selected_box {
@@ -194,7 +235,7 @@ impl RsMark {
             }
         }
         if let Some(bbox) = self.selected_box {
-            let rect = self.current_boxes[bbox].draw(painter, 0);
+            let rect = self.current_boxes[bbox].draw(painter, 0, true);
             self.current_boxes[bbox].draw_text(painter, &self.names, rect, 0);
         }
     }
