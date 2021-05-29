@@ -10,15 +10,15 @@ So I've resolved these and this is the result.
 ---
 # Roadmap
 
-[ ] multi-digit names shortcuts 
+- [ ] multi-digit names shortcuts 
 
-[ ] drag boxes
+- [ ] drag boxes
 
-[ ] changing settings in GUI (and more settings such as box thickness)
+- [ ] changing settings in GUI (and more settings such as box thickness)
 
-[ ] run from web server
+- [ ] run from web server
 
-[ ] abstract out traits to allow other export formats and annotation formats by third parties
+- [ ] abstract out traits to allow other export formats and annotation formats by third parties
 
 
 # Running
