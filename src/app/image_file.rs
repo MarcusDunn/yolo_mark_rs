@@ -6,7 +6,7 @@ use std::path::PathBuf;
 
 use image::{DynamicImage, ImageError};
 
-use crate::app::bbox::BBox;
+use crate::app::bbox::{BBox};
 
 static SUPPORTED_IMAGE_TYPES: [&str; 3] = ["jpg", "JPG", "JPEG"];
 
@@ -41,11 +41,14 @@ impl ImageFile {
             Some(stem) => format!("{}/{}.txt", parent, stem),
         };
         match File::open(txt_path) {
-            Ok(f) => BufReader::new(f)
-                .lines()
-                .map(|l| BBox::try_from(l.unwrap().as_str()))
-                .collect::<Result<Vec<BBox>, _>>()
-                .unwrap_or_default(),
+            Ok(f) =>
+                BufReader::new(f)
+                    .lines()
+                    .map(|r_line| r_line.expect("valid line read"))
+                    .filter(|line| !line.is_empty())
+                    .map(|line| BBox::try_from(line.as_str()))
+                    .map(|r_bbox| r_bbox.unwrap_or_else(|err| panic!("{}", err)))
+                    .collect::<Vec<BBox>>(),
             Err(_) => {
                 println!("heck");
                 Vec::new()
