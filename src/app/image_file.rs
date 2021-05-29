@@ -6,7 +6,7 @@ use std::path::PathBuf;
 
 use image::{DynamicImage, ImageError};
 
-use crate::app::bbox::{BBox};
+use crate::app::bbox::BBox;
 
 static SUPPORTED_IMAGE_TYPES: [&str; 3] = ["jpg", "JPG", "JPEG"];
 
@@ -47,7 +47,14 @@ impl ImageFile {
                     .map(|r_line| r_line.expect("invalid line read"))
                     .filter(|line| !line.is_empty())
                     .map(|line| BBox::try_from(line.as_str()))
-                    .map(|r_bbox| r_bbox.expect("box failed to parse"))
+                    .filter_map(|r_bbox| match r_bbox {
+                        Err(err) => {
+                            println!("WARNING: {}", err);
+                            println!("ignoring for now . . . ");
+                            None
+                        }
+                        Ok(bbox) => { Some(bbox) }
+                    })
                     .collect::<Vec<BBox>>(),
             Err(_) => {
                 println!("heck");
