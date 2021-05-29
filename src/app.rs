@@ -124,6 +124,22 @@ impl epi::App for RsMark {
         self.display_images(ctx, frame);
     }
 
+    fn setup(&mut self, _ctx: &egui::CtxRef) {
+        self.image_cache.update();
+        self.current_boxes = self.images[self.current_index.load(Ordering::SeqCst)].load_labels();
+    }
+
+    fn on_exit(&mut self) {
+        self.images[self.current_index.load(Ordering::SeqCst)]
+            .save_labels(self.current_boxes.as_slice())
+            .unwrap_or_else(|err| {
+                panic!(
+                    "FAILED TO SAVE FINAL ANNOTATIONS ON EXIT {:#?} \n\n DUE TO {}",
+                    self.current_boxes, err
+                )
+            });
+    }
+
     fn name(&self) -> &str {
         "rs mark"
     }
