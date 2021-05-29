@@ -25,6 +25,6 @@ So I've resolved these and this is the result.
 
 # Running
 
-needs the rust toolchain to compile. I'll eventually release binaries.
+needs the rust toolchain to compile. I'll eventually release binaries. Currently only runs on Nightly
 
 `cargo run --release <path to images> <path to names file>`
