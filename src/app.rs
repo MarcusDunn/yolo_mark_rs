@@ -4,9 +4,9 @@ use std::ops::Add;
 use std::sync::atomic::{AtomicUsize, Ordering};
 pub use std::time::{Duration, SystemTime};
 
-use eframe::egui::{CtxRef, ImageButton, Pos2, Rect, Sense, TextureId, Ui, Vec2};
-use eframe::epi::Frame;
 use eframe::{egui, epi};
+use eframe::egui::{CtxRef, ImageButton, InnerResponse, Pos2, Rect, Sense, TextureId, Ui, Vec2};
+use eframe::epi::Frame;
 
 use crate::app::bbox::BBox;
 use crate::app::image_cache::{ImageCache, ImageLookup};
@@ -36,11 +36,12 @@ mod bbox;
 
 impl RsMark {
     pub fn yolo(directory: ReadDir, names: Vec<String>, key_map: KeyboardMapping) -> RsMark {
-        let images = directory
+        let mut images = directory
             .map(|r| r.expect("failed to read a directory entry"))
             .map(|r| r.try_into())
             .filter_map(|r| r.ok())
             .collect::<Vec<_>>();
+        images.sort();
         println!("found {} images!", images.len());
         RsMark {
             selected_box: None,
@@ -84,7 +85,16 @@ impl epi::App for RsMark {
     fn update(&mut self, ctx: &CtxRef, frame: &mut Frame<'_>) {
         self.image_cache.update();
         self.handle_key_presses(ctx);
-        self.menu_bar(ctx, frame);
+        egui::SidePanel::left("side panel", 200.0).show(ctx, |ui| {
+            egui::ScrollArea::auto_sized().always_show_scroll(false).show(ui, |ui| {
+                for i in 0..self.names.len() {
+                    let names_resp = ui.selectable_label(self.selected_name == i, &self.names[i]);
+                    if names_resp.clicked() {
+                        self.selected_name = i
+                    }
+                }
+            });
+        });
         self.display_images(ctx, frame);
     }
 
@@ -118,37 +128,12 @@ impl RsMark {
             if self.key_map.is_triggered(Action::RemoveBox, ctx) {
                 self.current_boxes.remove(box_inx);
             }
-            if self.key_map.is_triggered(Action::DragBox, ctx) {
-                println!("drag not implemented yet")
-            }
         }
     }
 }
 
 impl RsMark {
-    fn menu_bar(&mut self, ctx: &CtxRef, frame: &mut Frame<'_>) {
-        egui::TopPanel::top("top panel").show(ctx, |ui| {
-            egui::menu::bar(ui, |ui| {
-                egui::menu::menu(ui, "File", |ui| {
-                    if ui.button("Quit").clicked() {
-                        frame.quit();
-                    }
-                });
-                for i in 0..self.names.len() {
-                    if ui
-                        .selectable_label(self.selected_name == i, &self.names[i])
-                        .clicked()
-                    {
-                        self.selected_name = i
-                    }
-                }
-            })
-        });
-    }
-}
-
-impl RsMark {
-    fn display_images(&mut self, ctx: &CtxRef, frame: &mut Frame<'_>) {
+    fn display_images(&mut self, ctx: &CtxRef, frame: &mut Frame<'_>) -> InnerResponse<()> {
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.image_cache.set_size(ui.available_size()) {
                 self.handle_index_change(0)
@@ -182,8 +167,14 @@ impl RsMark {
                     self.drag_diff = None;
                     self.drag_start = None;
                 }
-
-                self.paint_boxes(&ui, size)
+                let rect = Rect {
+                    min: img_resp.rect.min,
+                    max: Pos2 {
+                        x: img_resp.rect.min.x + size.x,
+                        y: img_resp.rect.min.y + size.y,
+                    },
+                };
+                self.paint_boxes(&ui, rect)
             } else {
                 let get_result = self.image_cache.get(
                     ImageLookup {
@@ -205,18 +196,10 @@ impl RsMark {
                     }
                 }
             }
-        });
+        })
     }
 
-    fn paint_boxes(&mut self, ui: &&mut Ui, size: Vec2) {
-        let top_left = ui.clip_rect().min;
-        let rect = Rect {
-            min: top_left,
-            max: Pos2 {
-                x: top_left.x + size.x,
-                y: top_left.y + size.y,
-            },
-        };
+    fn paint_boxes(&mut self, ui: &&mut Ui, rect: Rect) {
         let painter = &mut ui.painter_at(rect);
         self.selected_box = None;
         if let (Some(drag_start), Some(drag_diff)) = (self.drag_start, self.drag_diff) {

@@ -4,11 +4,11 @@ use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
 use std::num::{ParseFloatError, ParseIntError};
 
-use eframe::egui::color::Hsva;
 use eframe::egui::{Align2, Color32, Painter, Pos2, Rect, Stroke, TextStyle, Vec2};
+use eframe::egui::color::Hsva;
 use rand::Rng;
-use rand_chacha::rand_core::SeedableRng;
 use rand_chacha::ChaCha8Rng;
+use rand_chacha::rand_core::SeedableRng;
 
 #[derive(Debug)]
 pub enum BBoxError {
@@ -194,8 +194,8 @@ impl BBox {
         );
     }
     fn with_respect_to(&self, rect: Rect) -> Rect {
-        let abs_x = self.x * rect.width();
-        let abs_y = self.y * rect.height();
+        let abs_x = self.x * rect.width() + rect.min.x;
+        let abs_y = self.y * rect.height() + rect.min.y;
         let abs_width = self.width * rect.width();
         let abs_height = self.height * rect.height();
         Rect {
@@ -257,24 +257,6 @@ impl BBox {
             })
         }
     }
-
-    // pub fn from_absolute(
-    //     name: u32,
-    //     width: u32,
-    //     height: u32,
-    //     x: u32,
-    //     y: u32,
-    //     image_size: (u32, u32),
-    // ) -> BBox {
-    //     BBox::new(
-    //         name,
-    //         width as f32 / image_size.0 as f32,
-    //         height as f32 / image_size.1 as f32,
-    //         x as f32 / image_size.0 as f32,
-    //         y as f32 / image_size.1 as f32,
-    //     )
-    //     .expect("image_size is too small for that box")
-    // }
 }
 
 #[cfg(test)]

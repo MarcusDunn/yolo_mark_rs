@@ -79,16 +79,7 @@ fn wrangle_args(args: Args) -> Result<(ReadDir, Vec<String>), ArgumentError> {
             };
             let names = match File::open(names) {
                 Ok(f) => match BufReader::new(f).lines().collect::<Result<Vec<_>, _>>() {
-                    Ok(lines) => {
-                        if lines.iter().all(|line| !line.trim_end().contains(' ')) {
-                            lines
-                        } else {
-                            return Err(ArgumentError::ReadError(format!(
-                                "{:?} contained a name with a space",
-                                lines
-                            )));
-                        }
-                    }
+                    Ok(lines) => lines,
                     Err(err) => return Err(ArgumentError::ReadError(err.to_string())),
                 },
                 Err(err) => return Err(ArgumentError::ReadError(err.to_string())),

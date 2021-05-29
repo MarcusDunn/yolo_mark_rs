@@ -11,7 +11,6 @@ pub enum Action {
     PrevImage,
     NextName,
     PrevName,
-    DragBox,
     RemoveBox,
 }
 
@@ -46,11 +45,10 @@ impl KeyboardMapping {
 impl KeyboardMapping {
     fn default_mappings() -> Vec<(Action, EventTrigger)> {
         vec![
-            (Action::NextImage, Key::ArrowRight.into()),
-            (Action::PrevImage, Key::ArrowLeft.into()),
-            (Action::NextName, Key::ArrowUp.into()),
-            (Action::PrevName, Key::ArrowDown.into()),
-            (Action::DragBox, PointerButton::Middle.into()),
+            (Action::NextImage, Key::D.into()),
+            (Action::PrevImage, Key::A.into()),
+            (Action::NextName, Key::S.into()),
+            (Action::PrevName, Key::W.into()),
             (Action::RemoveBox, Key::R.into()),
         ]
     }

@@ -10,7 +10,7 @@ use crate::app::bbox::BBox;
 
 static SUPPORTED_IMAGE_TYPES: [&str; 3] = ["jpg", "JPG", "JPEG"];
 
-#[derive(Debug)]
+#[derive(Debug, Ord, PartialOrd, Eq, PartialEq)]
 pub struct ImageFile(PathBuf);
 
 #[derive(Debug)]
