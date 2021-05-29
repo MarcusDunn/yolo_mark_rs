@@ -1,7 +1,7 @@
 # Yolo Mark RS
 I've drawn too many boxes in yolo_mark, its usable but has some rough edges
 - always selects the larger box on hover (cannot delete inner annotations)
-- slow with meduim sized images
+- slow with meduim-large sized images
 - left/right arrow incrments/decements both image and tag
 - boxes have no transparency
 - no keybindings (my implemention still not ideal in this regard but will be improved on)
