@@ -20,4 +20,4 @@ So I've resolved these and this is the result.
 
 needs the rust toolchain to compile. I'll eventually release binaries.
 
-`cargo run --release <path to images> <path to names file>
+`cargo run --release <path to images> <path to names file>`
