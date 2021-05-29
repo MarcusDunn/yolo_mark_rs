@@ -78,8 +78,10 @@ impl ImageFile {
             .create(true)
             .write(true)
             .open(&txt_path)?;
-        f.set_len(0)?;
+        let result = f.set_len(0);
         BufWriter::new(f).write_all(Self::labels_to_string(labels).into_bytes().as_slice())?;
+        // we evaluate the result after writing so we don't exit without writing SOMETHING to the file even if it has garbage input at the end
+        result?;
         Ok(())
     }
 
