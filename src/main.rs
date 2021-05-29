@@ -10,7 +10,7 @@ use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::{env, fmt};
 
-use egui_template::KeyboardMapping;
+use yolo_mark_rs::{KeyboardMapping, RsMark};
 
 // When compiling natively:
 #[cfg(not(target_arch = "wasm32"))]
@@ -18,7 +18,7 @@ use egui_template::KeyboardMapping;
 fn main() {
     match wrangle_args(env::args()) {
         Ok((directory, names)) => {
-            let app = egui_template::RsMark::yolo(directory, names, KeyboardMapping::default());
+            let app = RsMark::yolo(directory, names, KeyboardMapping::default());
             let native_options = eframe::NativeOptions::default();
             eframe::run_native(Box::new(app), native_options);
         }

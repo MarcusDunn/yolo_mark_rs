@@ -520,20 +520,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "egui_template"
-version = "0.1.0"
-dependencies = [
- "crossbeam",
- "eframe",
- "image",
- "num_cpus",
- "quickcheck",
- "quickcheck_macros",
- "rand",
- "rand_chacha",
-]
-
-[[package]]
 name = "egui_web"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1959,3 +1945,17 @@ name = "xml-rs"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b07db065a5cf61a7e4ba64f29e67db906fb1787316516c4e6e5ff0fea1efcd8a"
+
+[[package]]
+name = "yolo_mark_rs"
+version = "1.0.0"
+dependencies = [
+ "crossbeam",
+ "eframe",
+ "image",
+ "num_cpus",
+ "quickcheck",
+ "quickcheck_macros",
+ "rand",
+ "rand_chacha",
+]
