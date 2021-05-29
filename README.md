@@ -28,3 +28,7 @@ So I've resolved these and this is the result.
 needs the rust toolchain to compile. I'll eventually release binaries. Currently only runs on Nightly
 
 `cargo run --release <path to images> <path to names file>`
+
+on debain-based distros you will also have to run the following (for other distros it is left as an exersize to the reader)
+
+`sudo apt-get install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev`
