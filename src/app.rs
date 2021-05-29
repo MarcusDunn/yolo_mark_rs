@@ -85,16 +85,7 @@ impl epi::App for RsMark {
     fn update(&mut self, ctx: &CtxRef, frame: &mut Frame<'_>) {
         self.image_cache.update();
         self.handle_key_presses(ctx);
-        egui::SidePanel::left("side panel", 200.0).show(ctx, |ui| {
-            egui::ScrollArea::auto_sized().always_show_scroll(false).show(ui, |ui| {
-                for i in 0..self.names.len() {
-                    let names_resp = ui.selectable_label(self.selected_name == i, &self.names[i]);
-                    if names_resp.clicked() {
-                        self.selected_name = i
-                    }
-                }
-            });
-        });
+        self.display_names(ctx);
         self.display_images(ctx, frame);
     }
 
@@ -102,6 +93,7 @@ impl epi::App for RsMark {
         "rs mark"
     }
 }
+
 
 impl RsMark {
     fn handle_key_presses(&mut self, ctx: &CtxRef) {
@@ -217,8 +209,7 @@ impl RsMark {
             bbox.draw_text(painter, &self.names, rect, 100);
             if ui.rect_contains_pointer(rect) {
                 if let Some(selected) = self.selected_box {
-                    if self.current_boxes[selected].width > bbox.width
-                        && self.current_boxes[selected].width > bbox.height
+                    if self.current_boxes[selected].width > bbox.width && self.current_boxes[selected].height > bbox.height
                     {
                         self.selected_box = Some(i);
                     }
@@ -231,5 +222,20 @@ impl RsMark {
             let rect = self.current_boxes[bbox].draw(painter, 0, true);
             self.current_boxes[bbox].draw_text(painter, &self.names, rect, 0);
         }
+    }
+}
+
+impl RsMark {
+    fn display_names(&mut self, ctx: &CtxRef) {
+        egui::SidePanel::left("side panel", 200.0).show(ctx, |ui| {
+            egui::ScrollArea::auto_sized().always_show_scroll(false).show(ui, |ui| {
+                for i in 0..self.names.len() {
+                    let names_resp = ui.selectable_label(self.selected_name == i, &self.names[i]);
+                    if names_resp.clicked() {
+                        self.selected_name = i
+                    }
+                }
+            });
+        });
     }
 }

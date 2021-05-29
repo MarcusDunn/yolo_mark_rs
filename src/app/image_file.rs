@@ -44,10 +44,10 @@ impl ImageFile {
             Ok(f) =>
                 BufReader::new(f)
                     .lines()
-                    .map(|r_line| r_line.expect("valid line read"))
+                    .map(|r_line| r_line.expect("invalid line read"))
                     .filter(|line| !line.is_empty())
                     .map(|line| BBox::try_from(line.as_str()))
-                    .map(|r_bbox| r_bbox.unwrap_or_else(|err| panic!("{}", err)))
+                    .map(|r_bbox| r_bbox.expect("box failed to parse"))
                     .collect::<Vec<BBox>>(),
             Err(_) => {
                 println!("heck");
