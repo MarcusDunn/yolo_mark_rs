@@ -122,13 +122,23 @@ impl BBox {
 }
 
 impl BBox {
-    pub(crate) fn draw_text(&self, painter: &mut Painter, names: &[String], rect: Rect, alpha: u8) {
+    pub(crate) fn draw_text(&self, painter: &mut Painter, names: &[String], rect: Rect, alpha: u8, selected: bool) {
+        let rect = painter.text(
+            rect.min - Vec2::new(0.0, 20.0),
+            Align2::LEFT_TOP,
+            &names[self.name],
+            TextStyle::Heading,
+            if selected { Color32::from_white_alpha(alpha) } else { self.color_w_alpha(alpha) },
+        );
+        if selected {
+            painter.rect(rect, 0.0, Color32::BLACK, Stroke::default())
+        }
         painter.text(
             rect.min,
             Align2::LEFT_TOP,
             &names[self.name],
             TextStyle::Heading,
-            self.color_w_alpha(alpha),
+            if selected { Color32::from_white_alpha(alpha) } else { self.color_w_alpha(alpha) },
         );
     }
 }
@@ -170,25 +180,25 @@ impl BBox {
         let thicc = Vec2::new(thickness / 2.0, thickness / 2.0);
         painter.rect(
             Rect::from_two_pos(bot_right + thicc, bot_left - thicc),
-            0.0,
+            1.0,
             color,
             Stroke::default(),
         );
         painter.rect(
             Rect::from_two_pos(top_left + thicc, bot_left - thicc),
-            0.0,
+            1.0,
             color,
             Stroke::default(),
         );
         painter.rect(
             Rect::from_two_pos(bot_right + thicc, top_right - thicc),
-            0.0,
+            1.0,
             color,
             Stroke::default(),
         );
         painter.rect(
             Rect::from_two_pos(top_right + thicc, top_left - thicc),
-            0.0,
+            1.0,
             color,
             Stroke::default(),
         );
@@ -221,7 +231,7 @@ impl BBox {
             v: 1.0,
             a: 0 as f32,
         }
-        .to_srgb()
+            .to_srgb()
     }
 
     pub fn new(name: usize, width: f32, height: f32, x: f32, y: f32) -> Result<BBox, BBoxError> {

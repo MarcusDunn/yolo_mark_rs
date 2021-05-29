@@ -206,7 +206,7 @@ impl RsMark {
         }
         for (i, bbox) in self.current_boxes.iter().enumerate() {
             let rect = bbox.draw(painter, 100, false);
-            bbox.draw_text(painter, &self.names, rect, 100);
+            bbox.draw_text(painter, &self.names, rect, 100, false);
             if ui.rect_contains_pointer(rect) {
                 if let Some(selected) = self.selected_box {
                     if self.current_boxes[selected].width > bbox.width && self.current_boxes[selected].height > bbox.height
@@ -219,8 +219,8 @@ impl RsMark {
             }
         }
         if let Some(bbox) = self.selected_box {
-            let rect = self.current_boxes[bbox].draw(painter, 0, true);
-            self.current_boxes[bbox].draw_text(painter, &self.names, rect, 0);
+            let rect = self.current_boxes[bbox].draw(painter, 255, true);
+            self.current_boxes[bbox].draw_text(painter, &self.names, rect,255, true);
         }
     }
 }
