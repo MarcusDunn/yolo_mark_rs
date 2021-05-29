@@ -11,6 +11,8 @@ So I've resolved these and this is the result.
 ---
 # Roadmap
 
+- [ ] add a limit to the cache (it munches memory if you annotate enough images, you can resize to clear cache for now)
+
 - [ ] multi-digit names shortcuts (type 1 1 quickly to get names #11)
 
 - [ ] drag boxes
