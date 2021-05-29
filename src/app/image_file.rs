@@ -78,8 +78,8 @@ impl ImageFile {
             .create(true)
             .write(true)
             .open(&txt_path)?;
-        let bw = &mut BufWriter::new(f);
-        bw.write_all(Self::labels_to_string(labels).into_bytes().as_slice())?;
+        f.set_len(0)?;
+        BufWriter::new(f).write_all(Self::labels_to_string(labels).into_bytes().as_slice())?;
         Ok(())
     }
 

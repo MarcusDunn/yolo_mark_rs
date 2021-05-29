@@ -56,8 +56,8 @@ impl Arguments {
 }
 
 pub fn wrangle_args(args: Args) -> Result<Arguments, ArgumentError> {
-    let vec = args.collect::<Vec<_>>();
-    if let [_, dir_path, names_path, _optional @ ..] = vec.as_slice() {
+    let args = args.collect::<Vec<_>>();
+    if let [_, dir_path, names_path, _optional @ ..] = args.as_slice() {
         let dir = Path::new(dir_path);
         let names = Path::new(names_path);
         if !dir.exists() {
@@ -102,8 +102,8 @@ pub fn wrangle_args(args: Args) -> Result<Arguments, ArgumentError> {
     } else {
         Err(ArgumentError::InvalidNumber(format!(
             "expected arguments of the format <images directory> <names file> [optional args]. found {}: [\"{}\"]",
-            vec.len(),
-            vec.join("\",\"")
+            args.len(),
+            args.join("\",\"")
         )))
     }
 }
