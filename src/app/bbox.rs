@@ -107,15 +107,15 @@ impl BBox {
         }: Pos2,
         Vec2 { x: img_w, y: img_h }: Vec2,
     ) -> Result<BBox, BBoxError> {
-        let abs_x = dbg!((box_x1 + box_x2) / 2.0);
-        let abs_y = dbg!((box_y1 + box_y2) / 2.0);
-        let abs_w = dbg!((box_x1 - box_x2).abs());
-        let abs_h = dbg!((box_y1 - box_y2).abs());
+        let abs_x = (box_x1 + box_x2) / 2.0;
+        let abs_y = (box_y1 + box_y2) / 2.0;
+        let abs_w = (box_x1 - box_x2).abs();
+        let abs_h = (box_y1 - box_y2).abs();
 
-        let rel_width = dbg!(abs_w / img_w);
-        let rel_height = dbg!(abs_h / img_h);
-        let rel_x = dbg!(abs_x / img_w);
-        let rel_y = dbg!(abs_y / img_h);
+        let rel_width = abs_w / img_w;
+        let rel_height = abs_h / img_h;
+        let rel_x = abs_x / img_w;
+        let rel_y = abs_y / img_h;
 
         BBox::new(name, rel_width, rel_height, rel_x, rel_y)
     }
@@ -304,12 +304,12 @@ mod tests {
     }
 
     impl Arbitrary for BBox {
-        fn arbitrary(g: &mut Gen) -> Self {
-            let w = u8::arbitrary(g) as f32 / 255.0;
-            let h = u8::arbitrary(g) as f32 / 255.0;
-            let x = u8::arbitrary(g) as f32 / 255.0;
-            let y = u8::arbitrary(g) as f32 / 255.0;
-            BBox::new(usize::arbitrary(g), w, h, x, y).unwrap()
+        fn arbitrary(generator: &mut Gen) -> Self {
+            let width = u8::arbitrary(generator) as f32 / 255.0;
+            let height = u8::arbitrary(generator) as f32 / 255.0;
+            let x = u8::arbitrary(generator) as f32 / 255.0;
+            let y = u8::arbitrary(generator) as f32 / 255.0;
+            BBox::new(usize::arbitrary(generator), width, height, x, y).unwrap()
         }
     }
 }
