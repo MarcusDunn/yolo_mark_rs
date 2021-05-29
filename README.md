@@ -11,7 +11,7 @@ So I've resolved these and this is the result.
 ---
 # Roadmap
 
-- [ ] multi-digit names shortcuts 
+- [ ] multi-digit names shortcuts (type 1 1 quickly to get names #11)
 
 - [ ] drag boxes
 
