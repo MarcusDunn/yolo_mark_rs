@@ -1,12 +1,14 @@
 # Yolo Mark RS
 I've drawn too many boxes in yolo_mark, its usable but has some rough edges
 - always selects the larger box on hover (cannot delete inner annotations)
-- slow with meduim-large sized images
-- left/right arrow incrments/decements both image and tag
+- slow with medium-large sized images
+- left/right arrow increments/decrements both image and tag
 - boxes have no transparency
-- no keybindings (my implemention still not ideal in this regard but will be improved on)
+- no keybindings (my implementation still not ideal in this regard but will be improved on)
 
 So I've resolved these and this is the result.
+
+![img.png](img.png)
 
 ---
 # Roadmap
@@ -25,10 +27,10 @@ So I've resolved these and this is the result.
 
 # Running
 
-needs the rust toolchain to compile. I'll eventually release binaries. Currently only runs on Nightly
+needs the rust toolchain to compile. I'll eventually release binaries. Currently, only runs on Nightly
 
 `cargo run --release <path to images> <path to names file>`
 
-on debain-based distros you will also have to run the following (for other distros it is left as an exersize to the reader)
+on linux there is also some extra libs needed for egui to work. Debian-based distros you will also have to run the following (for other distros it is left as an exercise to the reader)
 
 `sudo apt-get install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev`
