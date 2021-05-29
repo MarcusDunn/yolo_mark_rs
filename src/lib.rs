@@ -8,6 +8,7 @@ use eframe::wasm_bindgen::{self, prelude::*};
 
 pub use app::keyboard_mapping::KeyboardMapping;
 pub use app::RsMark;
+pub use app::arguments::wrangle_args;
 
 mod app;
 // ----------------------------------------------------------------------------

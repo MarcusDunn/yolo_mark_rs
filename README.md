@@ -1,36 +1,50 @@
 # Yolo Mark RS
-I've drawn too many boxes in yolo_mark, its usable but has some rough edges
-- always selects the larger box on hover (cannot delete inner annotations)
-- slow with medium-large sized images
-- left/right arrow increments/decrements both image and tag
-- boxes have no transparency
-- no keybindings (my implementation still not ideal in this regard but will be improved on)
 
-So I've resolved these and this is the result.
+I've drawn too many boxes in yolo_mark, its usable but has some rough edges:
+
+- Always selects the larger box on hover (cannot delete inner annotations)
+- Slow with medium-large sized images
+- Left/right arrow increments/decrements both image and tag
+- Boxes have no transparency
+- No custom keybindings (my implementation still not ideal in this regard but will be improved on)
+- You can a) create 0 sized boxes and b) cannot delete them without clearing all other annotations
+
+So I've resolved these + some quality of life features of my own and this is the result.
 
 ![img.png](img.png)
 
 ---
+
 # Roadmap
 
-- [ ] add a limit to the cache (it munches memory if you annotate enough images, you can resize to clear cache for now)
+- [ ] Add a limit to the cache (the cache EATS memory if you annotate enough images, you can resize to clear cache for
+  now)
 
-- [ ] multi-digit names shortcuts (type 1 1 quickly to get names #11)
+- [ ] Multi-digit names shortcuts (type 1 1 quickly to get names #11)
 
-- [ ] drag boxes
+- [ ] Drag boxes
 
-- [ ] changing settings in GUI (and more settings such as box thickness and alpha)
+- [ ] Make already trained yolo predict boxes and allow the user to correct them (VoTT style)
 
-- [ ] run from web server
+- [ ] Use modifier keys in some useful way (control + increment name = increment x 5?)
 
-- [ ] abstract out traits to allow other export formats and annotation styles
+- [ ] Show some annotation meta-data (labels per class and such)
+
+- [ ] Changing settings in GUI (and more settings such as box thickness and alpha)
+
+- [ ] Label images outside of local filesystem (ssh?)
+
+- [ ] Compile to WASM and run on web (long term)
+
+- [ ] Abstract out traits to allow other export formats and annotation styles
 
 # Running
 
-needs the rust toolchain to compile. I'll eventually release binaries. Currently, only runs on Nightly
+You'll the rust toolchain to compile. I'll eventually release binaries. Currently, only runs on Nightly
 
 `cargo run --release <path to images> <path to names file>`
 
-on linux there is also some extra libs needed for egui to work. Debian-based distros you will also have to run the following (for other distros it is left as an exercise to the reader)
+On linux there is also some extra libs needed for egui to work. Debian-based distros you will also have to run the
+following (for other distros it is left as an exercise to the reader)
 
 `sudo apt-get install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev`

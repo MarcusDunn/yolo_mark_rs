@@ -1,7 +1,7 @@
 use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::fs::{DirEntry, File};
-use std::io::{BufRead, BufReader, LineWriter, Write};
+use std::io::{BufRead, BufReader, BufWriter, Write};
 use std::path::PathBuf;
 
 use image::{DynamicImage, ImageError};
@@ -35,29 +35,31 @@ impl ImageFile {
         };
         let txt_path = match self.0.file_stem().and_then(|stem| stem.to_str()) {
             None => {
-                println!("heck");
+                println!("could not get file stem of {:?}", self.0);
                 return Vec::new();
             }
             Some(stem) => format!("{}/{}.txt", parent, stem),
         };
-        match File::open(txt_path) {
-            Ok(f) =>
-                BufReader::new(f)
-                    .lines()
-                    .map(|r_line| r_line.expect("invalid line read"))
-                    .filter(|line| !line.is_empty())
-                    .map(|line| BBox::try_from(line.as_str()))
-                    .filter_map(|r_bbox| match r_bbox {
-                        Err(err) => {
-                            println!("WARNING: {}", err);
-                            println!("ignoring for now . . . ");
-                            None
-                        }
-                        Ok(bbox) => { Some(bbox) }
-                    })
-                    .collect::<Vec<BBox>>(),
-            Err(_) => {
-                println!("heck");
+        match File::open(&txt_path) {
+            Ok(f) => BufReader::new(f)
+                .lines()
+                .map(|r_line| r_line.expect("invalid line read"))
+                .filter(|line| !line.is_empty())
+                .map(|line| BBox::try_from(line.as_str()))
+                .filter_map(|r_bbox| match r_bbox {
+                    Err(err) => {
+                        println!(
+                            "WARNING: error when parsing boxes from file {} {}",
+                            txt_path, err
+                        );
+                        println!("ignoring for now . . . ");
+                        None
+                    }
+                    Ok(bbox) => Some(bbox),
+                })
+                .collect::<Vec<BBox>>(),
+            Err(err) => {
+                println!("could not open {}: {}", txt_path, err);
                 Vec::new()
             }
         }
@@ -75,13 +77,18 @@ impl ImageFile {
         let f = File::with_options()
             .create(true)
             .write(true)
-            .open(txt_path)?;
-        let lw = &mut LineWriter::new(f);
-        for bbox in labels {
-            lw.write_all(bbox.yolo_format().as_bytes())?;
-            lw.write_all(b"\n")?;
-        }
+            .open(&txt_path)?;
+        let bw = &mut BufWriter::new(f);
+        bw.write_all(Self::labels_to_string(labels).into_bytes().as_slice())?;
         Ok(())
+    }
+
+    fn labels_to_string(labels: &[BBox]) -> String {
+        labels
+            .iter()
+            .map(|bbox| bbox.yolo_format())
+            .collect::<Vec<_>>()
+            .join("\n")
     }
 
     pub fn as_image(&self) -> Result<DynamicImage, ImageError> {

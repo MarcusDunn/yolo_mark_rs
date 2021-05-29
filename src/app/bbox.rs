@@ -4,11 +4,11 @@ use std::fmt;
 use std::fmt::{Debug, Display, Formatter};
 use std::num::{ParseFloatError, ParseIntError};
 
-use eframe::egui::{Align2, Color32, Painter, Pos2, Rect, Stroke, TextStyle, Vec2};
 use eframe::egui::color::Hsva;
+use eframe::egui::{Align2, Color32, Painter, Pos2, Rect, Stroke, TextStyle, Vec2};
 use rand::Rng;
-use rand_chacha::ChaCha8Rng;
 use rand_chacha::rand_core::SeedableRng;
+use rand_chacha::ChaCha8Rng;
 
 #[derive(Debug)]
 pub enum BBoxError {
@@ -95,6 +95,20 @@ impl BBox {
         self.to_string()
     }
 
+    pub fn from_two_points_and_rect(
+        name: usize,
+        rect: Rect,
+        drag_srt: Pos2,
+        drag_diff: Pos2,
+    ) -> Result<BBox, BBoxError> {
+        BBox::from_two_points(
+            name,
+            drag_srt - rect.min.to_vec2(),
+            drag_srt + drag_diff.to_vec2() - rect.min.to_vec2(),
+            rect.size(),
+        )
+    }
+
     pub(crate) fn from_two_points(
         name: usize,
         Pos2 {
@@ -122,13 +136,24 @@ impl BBox {
 }
 
 impl BBox {
-    pub(crate) fn draw_text(&self, painter: &mut Painter, names: &[String], rect: Rect, alpha: u8, selected: bool) {
+    pub(crate) fn draw_text(
+        &self,
+        painter: &mut Painter,
+        names: &[String],
+        rect: Rect,
+        alpha: u8,
+        selected: bool,
+    ) {
         let rect = painter.text(
             rect.min - Vec2::new(0.0, 20.0),
             Align2::LEFT_TOP,
             &names[self.name],
             TextStyle::Heading,
-            if selected { Color32::from_white_alpha(alpha) } else { self.color_w_alpha(alpha) },
+            if selected {
+                Color32::from_white_alpha(alpha)
+            } else {
+                self.color_w_alpha(alpha)
+            },
         );
         if selected {
             painter.rect(rect, 0.0, Color32::BLACK, Stroke::default())
@@ -138,7 +163,11 @@ impl BBox {
             Align2::LEFT_TOP,
             &names[self.name],
             TextStyle::Heading,
-            if selected { Color32::from_white_alpha(alpha) } else { self.color_w_alpha(alpha) },
+            if selected {
+                Color32::from_white_alpha(alpha)
+            } else {
+                self.color_w_alpha(alpha)
+            },
         );
     }
 }
@@ -231,18 +260,18 @@ impl BBox {
             v: 1.0,
             a: 0 as f32,
         }
-            .to_srgb()
+        .to_srgb()
     }
 
     pub fn new(name: usize, width: f32, height: f32, x: f32, y: f32) -> Result<BBox, BBoxError> {
-        if !(0.0..=1.0).contains(&width) {
+        if !(0.0..=1.0).contains(&width) && width != 0.0 {
             Err(BBoxError::InvalidField(format!(
-                "width of {} not in [0..=1]",
+                "width of {} not in (0..=1]",
                 width
             )))
-        } else if !(0.0..=1.0).contains(&height) {
+        } else if !(0.0..=1.0).contains(&height) && height != 0.0 {
             Err(BBoxError::InvalidField(format!(
-                "height of {} not in [0..=1]",
+                "height of {} not in (0..=1]",
                 height
             )))
         } else if !(0.0..=1.0).contains(&x) {
@@ -278,27 +307,22 @@ mod tests {
 
     #[quickcheck]
     fn from_line_and_to_line_are_opposite(bbox: BBox) -> bool {
-        let BBox {
-            color,
-            name,
-            width,
-            height,
-            x,
-            y,
-            ..
-        } = BBox::try_from(bbox.to_string().as_str()).unwrap();
-        color == bbox.color
-            && name == bbox.name
-            && width > bbox.width - 0.001
-            && height > bbox.height - 0.001
-            && x > bbox.x - 0.001
-            && y > bbox.y - 0.001
+        let and_back_again = BBox::try_from(bbox.to_string().as_str()).unwrap();
+        almost_eq(&bbox, &and_back_again)
+    }
+
+    fn almost_eq(bbox1: &BBox, bbox2: &BBox) -> bool {
+        (bbox1.height - bbox2.height) < 0.000001
+            && (bbox1.width - bbox2.width) < 0.000001
+            && (bbox1.x - bbox2.x) < 0.000001
+            && (bbox1.y - bbox2.y) < 0.000001
+            && bbox1.name == bbox2.name
     }
 
     impl Arbitrary for BBox {
         fn arbitrary(generator: &mut Gen) -> Self {
-            let width = u8::arbitrary(generator) as f32 / 255.0;
-            let height = u8::arbitrary(generator) as f32 / 255.0;
+            let width = u8::arbitrary(generator).saturating_add(1) as f32 / 255.0;
+            let height = u8::arbitrary(generator).saturating_add(1) as f32 / 255.0;
             let x = u8::arbitrary(generator) as f32 / 255.0;
             let y = u8::arbitrary(generator) as f32 / 255.0;
             BBox::new(usize::arbitrary(generator), width, height, x, y).unwrap()
