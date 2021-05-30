@@ -11,10 +11,7 @@ I've drawn too many boxes in yolo_mark, its usable but has some rough edges:
 
 So I've resolved these + some quality of life features of my own and this is the result.
 
-![img.png](img.png)
-
 ---
-
 # Roadmap
 
 - [ ] Add a limit to the cache (the cache EATS memory if you annotate enough images, you can resize to clear cache for
