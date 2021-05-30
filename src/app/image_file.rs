@@ -57,7 +57,7 @@ impl ImageFile {
                     }
                     Ok(bbox) => Some(bbox),
                 })
-                .collect::<Vec<BBox>>(),
+                .collect(),
             Err(err) => {
                 println!("could not open {}: {}", txt_path, err);
                 Vec::new()
@@ -65,22 +65,27 @@ impl ImageFile {
         }
     }
 
+    /// panics if the path contains invalid unicode
     pub fn save_labels(&self, labels: &[BBox]) -> std::io::Result<()> {
-        let parent = match self.0.parent() {
-            None => panic!("oh god oh fuck where is the file"),
-            Some(p) => p.to_str().unwrap(),
-        };
-        let txt_path = match self.0.file_stem().and_then(|stem| stem.to_str()) {
-            None => panic!("oh god oh fuck where is the file"),
-            Some(stem) => format!("{}/{}.txt", parent, stem),
-        };
+        let parent = self
+            .0
+            .parent()
+            .map(|parent| parent.to_str().expect("parent is not valid unicode"))
+            .unwrap_or("");
+        let stem = self
+            .0
+            .file_stem()
+            .expect("could not get the stem")
+            .to_str()
+            .expect("stem is not valid unicode");
+        let txt_path = format!("{}/{}.txt", parent, stem);
         let f = File::with_options()
             .create(true)
             .write(true)
             .open(&txt_path)?;
         let result = f.set_len(0);
         BufWriter::new(f).write_all(Self::labels_to_string(labels).into_bytes().as_slice())?;
-        // we evaluate the result after writing so we don't exit without writing SOMETHING to the file even if it has garbage input at the end
+        // we evaluate the result after writing so we don't exit without writing SOMETHING to the file even if it has garbage left over at the end
         result?;
         Ok(())
     }
@@ -94,10 +99,7 @@ impl ImageFile {
     }
 
     pub fn as_image(&self) -> Result<DynamicImage, ImageError> {
-        match image::open(self.0.as_path()) {
-            Ok(img) => Ok(img),
-            Err(err) => Err(err),
-        }
+        image::open(self.0.as_path())
     }
 
     pub fn as_path(&self) -> PathBuf {

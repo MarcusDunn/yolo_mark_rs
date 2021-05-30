@@ -137,6 +137,21 @@ impl ImageCache {
 
     pub fn get(&mut self, lookup: ImageLookup, files: &[ImageFile]) -> Option<&ImageData> {
         self.update();
+        if self.cache.len() > 50 {
+            println!("cleaning cache!");
+            self.cache.retain(|ImageLookup { index }, _| {
+                let diff = if lookup.index.lt(&index) {
+                    index - lookup.index
+                } else {
+                    lookup.index - index
+                };
+                let will_retain = diff < 25;
+                if !will_retain {
+                    println!("removing image {} from cache", index)
+                }
+                will_retain
+            })
+        }
         for i in 0..=(num_cpus::get() / 2) {
             let guess_at_next = ImageLookup {
                 index: lookup.index.saturating_add(i),

@@ -11,8 +11,9 @@ use eframe::{egui, epi};
 use crate::app::arguments::Arguments;
 use crate::app::bbox::BBox;
 use crate::app::image_cache::{ImageCache, ImageLookup};
-use crate::app::image_file::ImageFile;
+use crate::app::images::Images;
 use crate::app::keyboard_mapping::{Action, KeyboardMapping};
+use crate::app::names::Names;
 
 mod image_cache;
 mod image_file;
@@ -24,8 +25,8 @@ pub struct RsMark {
     current_image_input_text: String,
     key_map: KeyboardMapping,
     current_index: AtomicUsize,
-    images: Vec<ImageFile>,
-    names: Vec<String>,
+    images: Images,
+    names: Names,
     selected_name: usize,
     image_cache: ImageCache,
     current_image: Option<(TextureId, Vec2)>,
@@ -33,6 +34,10 @@ pub struct RsMark {
     drag_start: Option<Pos2>,
     drag_diff: Option<Pos2>,
 }
+
+mod names;
+
+mod images;
 
 impl RsMark {
     pub(crate) fn display_info(&mut self, ctx: &CtxRef) -> InnerResponse<()> {
@@ -65,14 +70,7 @@ pub mod arguments;
 mod bbox;
 
 impl RsMark {
-    pub fn yolo(
-        Arguments {
-            mut image_dir,
-            names,
-        }: Arguments,
-        key_map: KeyboardMapping,
-    ) -> RsMark {
-        image_dir.sort();
+    pub fn yolo(Arguments { image_dir, names }: Arguments, key_map: KeyboardMapping) -> RsMark {
         println!("found {} images!", image_dir.len());
         RsMark {
             selected_box: None,
@@ -99,7 +97,7 @@ impl RsMark {
                 .fetch_add(incr.abs() as usize, Ordering::SeqCst)
         };
         self.images[index]
-            .save_labels(self.current_boxes.as_slice())
+            .save_labels(&self.current_boxes)
             .unwrap_or_else(|err| panic!("error occurred while writing label {}", err));
         self.current_boxes = self
             .images
@@ -131,7 +129,7 @@ impl epi::App for RsMark {
 
     fn on_exit(&mut self) {
         self.images[self.current_index.load(Ordering::SeqCst)]
-            .save_labels(self.current_boxes.as_slice())
+            .save_labels(&self.current_boxes)
             .unwrap_or_else(|err| {
                 panic!(
                     "FAILED TO SAVE FINAL ANNOTATIONS ON EXIT {:#?} \n\n DUE TO {}",
