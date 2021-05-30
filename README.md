@@ -7,9 +7,13 @@ I've drawn too many boxes in yolo_mark, its usable but has some rough edges:
 - Left/right arrow increments/decrements both image and tag
 - Boxes have no transparency
 - No custom keybindings (my implementation still not ideal in this regard but will be improved on)
-- You can a) create 0 sized boxes and b) cannot delete them without clearing all other annotations
+- You can create 0 sized boxes
+- cannot delete 0 sized boxes without clearing all other annotations
+
 
 So I've resolved these + some quality of life features of my own and this is the result.
+
+![img.png](img.png)
 
 ---
 # Roadmap
