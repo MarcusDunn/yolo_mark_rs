@@ -18,7 +18,7 @@ So I've resolved these + some quality of life features of my own and this is the
 ---
 # Roadmap
 
-- [ ] Add a limit to the cache (the cache EATS memory if you annotate enough images, you can resize to clear cache for
+- [x] Add a limit to the cache (the cache EATS memory if you annotate enough images, you can resize to clear cache for
   now)
 
 - [ ] Multi-digit names shortcuts (type 1 1 quickly to get names #11)
