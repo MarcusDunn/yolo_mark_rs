@@ -24,7 +24,7 @@ impl Display for BBoxError {
             BBoxError::ParseIntError(err) => std::fmt::Display::fmt(&err, f),
             BBoxError::ParseFloatError(err) => std::fmt::Display::fmt(&err, f),
             BBoxError::InvalidLine(explanation) => write!(f, "InvalidLine {}", explanation),
-            BBoxError::InvalidField(explanation) => write!(f, "InvalidLine {}", explanation),
+            BBoxError::InvalidField(explanation) => write!(f, "InvalidField {}", explanation),
         }
     }
 }
@@ -264,14 +264,14 @@ impl BBox {
     }
 
     pub fn new(name: usize, width: f32, height: f32, x: f32, y: f32) -> Result<BBox, BBoxError> {
-        if !(0.0..=1.0).contains(&width) && width != 0.0 {
+        if !(0.0001..=1.0).contains(&width) {
             Err(BBoxError::InvalidField(format!(
-                "width of {} not in (0..=1]",
+                "width of {} not in [0.0001..=1]",
                 width
             )))
-        } else if !(0.0..=1.0).contains(&height) && height != 0.0 {
+        } else if !(0.0001..=1.0).contains(&height) {
             Err(BBoxError::InvalidField(format!(
-                "height of {} not in (0..=1]",
+                "height of {} not in [0.0001..=1]",
                 height
             )))
         } else if !(0.0..=1.0).contains(&x) {
@@ -284,6 +284,14 @@ impl BBox {
                 "y of {} not in [0..=1]",
                 y
             )))
+        } else if !(0.0..=1.0).contains(&(x + width / 2.0))
+            || !(0.0..=1.0).contains(&(x - width / 2.0))
+            || !(0.0..=1.0).contains(&(y + height / 2.0))
+            || !(0.0..=1.0).contains(&(y - height / 2.0))
+        {
+            Err(BBoxError::InvalidField(
+                "there's a corner out of bounds!".to_string(),
+            ))
         } else {
             Ok(BBox {
                 no_init_from_fields: (),

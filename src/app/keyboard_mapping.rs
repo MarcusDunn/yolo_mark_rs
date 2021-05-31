@@ -49,6 +49,7 @@ pub enum Action {
     PrevName,
     RemoveBox,
     NameNumber(ZeroToNine),
+    Clear,
 }
 
 pub enum EventTrigger {
@@ -97,6 +98,7 @@ impl KeyboardMapping {
             (Action::NameNumber(7.try_into().unwrap()), Key::Num7.into()),
             (Action::NameNumber(8.try_into().unwrap()), Key::Num8.into()),
             (Action::NameNumber(9.try_into().unwrap()), Key::Num9.into()),
+            (Action::Clear, Key::C.into()),
         ]
     }
 }

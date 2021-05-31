@@ -4,13 +4,13 @@ use std::time::Instant;
 pub use std::time::{Duration, SystemTime};
 
 use eframe::egui::{
-    CtxRef, ImageButton, InnerResponse, Pos2, Rect, Sense, TextEdit, TextureId, Ui, Vec2,
+    CtxRef, Image, InnerResponse, Pos2, Rect, Sense, TextEdit, TextureId, Ui, Vec2,
 };
 use eframe::epi::Frame;
 use eframe::{egui, epi};
 
 use crate::app::arguments::Arguments;
-use crate::app::bbox::BBox;
+use crate::app::bbox::{BBox, BBoxError};
 use crate::app::image_cache::{ImageCache, ImageLookup};
 use crate::app::images::Images;
 use crate::app::keyboard_mapping::zero_to_nine::ZeroToNine;
@@ -149,6 +149,9 @@ impl epi::App for RsMark {
 
 impl RsMark {
     fn handle_key_presses(&mut self, ctx: &CtxRef) {
+        if self.key_map.is_triggered(Action::Clear, ctx) {
+            self.current_boxes.clear();
+        }
         if self.key_map.is_triggered(Action::NextImage, ctx) {
             self.handle_index_change(1)
         }
@@ -204,9 +207,7 @@ impl RsMark {
                 self.handle_index_change(0)
             }
             if let Some((texture_id, size)) = self.current_image {
-                let img = ImageButton::new(texture_id, size)
-                    .sense(Sense::click_and_drag())
-                    .frame(false);
+                let img = Image::new(texture_id, size).sense(Sense::click_and_drag());
                 let img_resp = ui.add(img);
                 let rect = Rect {
                     min: img_resp.rect.min,
@@ -247,7 +248,8 @@ impl RsMark {
                 );
                 match get_result {
                     None => {
-                        ui.label("damn I'm shit at coding");
+                        ui.label("Loading . . .");
+                        ui.label("try moving your mouse to force an update!");
                     }
                     Some(img) => {
                         self.current_image = Some((
@@ -270,6 +272,7 @@ impl RsMark {
                 Ok(bbox) => {
                     bbox.draw(painter, 0, true);
                 }
+                Err(BBoxError::InvalidField(_)) => { /*ignore too invalid boxes when dragging*/ }
                 Err(err) => {
                     println!("WARNING: error when creating box from drag {}", err);
                     println!("ignoring for now . . .")
@@ -301,19 +304,17 @@ impl RsMark {
 impl RsMark {
     fn display_names(&mut self, ctx: &CtxRef) {
         egui::SidePanel::left("side panel", 200.0).show(ctx, |ui| {
-            egui::ScrollArea::auto_sized()
-                .always_show_scroll(false)
-                .show(ui, |ui| {
-                    for i in 0..self.names.len() {
-                        let names_resp = ui.selectable_label(
-                            self.selected_name == i,
-                            &format!("{}: {}", i, self.names[i]),
-                        );
-                        if names_resp.clicked() {
-                            self.selected_name = i
-                        }
+            egui::ScrollArea::auto_sized().show(ui, |ui| {
+                for i in 0..self.names.len() {
+                    let names_resp = ui.selectable_label(
+                        self.selected_name == i,
+                        &format!("{}: {}", i, self.names[i]),
+                    );
+                    if names_resp.clicked() {
+                        self.selected_name = i
                     }
-                });
+                }
+            });
         });
     }
 }
