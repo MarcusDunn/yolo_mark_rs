@@ -24,6 +24,7 @@ pub mod keyboard_mapping;
 
 pub struct RsMark {
     // index of box in current_boxes
+    page: Page,
     settings: Settings,
     selected_box: Option<usize>,
     current_image_input_text: String,
@@ -40,6 +41,17 @@ pub struct RsMark {
     shortcut_buffer: Vec<(ZeroToNine, Instant)>,
 }
 
+impl RsMark {
+    pub(crate) fn display_edit_settings(&self, _ctx: &CtxRef, _frame: &mut Frame<'_>) {
+        todo!()
+    }
+}
+
+enum Page {
+    Label,
+    Settings,
+}
+
 mod names;
 
 mod images;
@@ -47,9 +59,21 @@ mod images;
 mod settings;
 
 impl RsMark {
-    pub(crate) fn display_info(&mut self, ctx: &CtxRef) -> InnerResponse<()> {
+    pub(crate) fn display_info(
+        &mut self,
+        ctx: &CtxRef,
+        frame: &mut Frame<'_>,
+    ) -> InnerResponse<()> {
         egui::TopPanel::top("top info panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
+                egui::menu::menu(ui, "File ", |ui| {
+                    if ui.button("Settings").clicked() {
+                        self.page = Page::Settings
+                    }
+                    if ui.button("Quit").clicked() {
+                        frame.quit()
+                    }
+                });
                 let button_resp = ui.button("Jump to image:");
                 let resp = ui.add(
                     TextEdit::singleline(&mut self.current_image_input_text).desired_width(10.0),
@@ -80,6 +104,7 @@ impl RsMark {
     pub fn yolo(Arguments { image_dir, names }: Arguments, key_map: KeyboardMapping) -> RsMark {
         println!("found {} images!", image_dir.len());
         RsMark {
+            page: Page::Label,
             settings: Settings::from_file().unwrap_or_default(),
             selected_box: None,
             current_image_input_text: 0.to_string(),
@@ -124,11 +149,16 @@ impl RsMark {
 
 impl epi::App for RsMark {
     fn update(&mut self, ctx: &CtxRef, frame: &mut Frame<'_>) {
-        self.image_cache.update();
-        self.handle_key_presses(ctx);
-        self.display_info(ctx);
-        self.display_names(ctx);
-        self.display_images(ctx, frame);
+        match &self.page {
+            Page::Label => {
+                self.image_cache.update();
+                self.handle_key_presses(ctx);
+                self.display_info(ctx, frame);
+                self.display_names(ctx);
+                self.display_images(ctx, frame);
+            }
+            Page::Settings => self.display_edit_settings(ctx, frame),
+        }
     }
 
     fn setup(&mut self, _ctx: &egui::CtxRef) {
@@ -148,7 +178,7 @@ impl epi::App for RsMark {
     }
 
     fn name(&self) -> &str {
-        "rs mark"
+        "RS Mark"
     }
 }
 
