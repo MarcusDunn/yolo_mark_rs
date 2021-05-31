@@ -23,6 +23,8 @@ So I've resolved these + some quality of life features of my own and this is the
 
 - [x] Multi-digit names shortcuts (type 1 1 quickly to get names #11)
 
+- [ ] Changing settings in GUI (and more settings such as box thickness and alpha)
+  
 - [ ] Drag boxes
 
 - [ ] Make already trained yolo predict boxes and allow the user to correct them (VoTT style)
@@ -30,8 +32,6 @@ So I've resolved these + some quality of life features of my own and this is the
 - [ ] Use modifier keys in some useful way (control + increment name = increment x 5?)
 
 - [ ] Show some annotation meta-data (labels per class and such)
-
-- [ ] Changing settings in GUI (and more settings such as box thickness and alpha)
 
 - [ ] Label images outside of local filesystem (ssh?)
 
