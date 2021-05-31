@@ -16,6 +16,7 @@ use crate::app::images::Images;
 use crate::app::keyboard_mapping::zero_to_nine::ZeroToNine;
 use crate::app::keyboard_mapping::{Action, KeyboardMapping};
 use crate::app::names::Names;
+use crate::app::settings::Settings;
 
 mod image_cache;
 mod image_file;
@@ -23,6 +24,7 @@ pub mod keyboard_mapping;
 
 pub struct RsMark {
     // index of box in current_boxes
+    settings: Settings,
     selected_box: Option<usize>,
     current_image_input_text: String,
     key_map: KeyboardMapping,
@@ -41,6 +43,8 @@ pub struct RsMark {
 mod names;
 
 mod images;
+
+mod settings;
 
 impl RsMark {
     pub(crate) fn display_info(&mut self, ctx: &CtxRef) -> InnerResponse<()> {
@@ -76,6 +80,7 @@ impl RsMark {
     pub fn yolo(Arguments { image_dir, names }: Arguments, key_map: KeyboardMapping) -> RsMark {
         println!("found {} images!", image_dir.len());
         RsMark {
+            settings: Settings::from_file().unwrap_or_default(),
             selected_box: None,
             current_image_input_text: 0.to_string(),
             key_map,
@@ -177,7 +182,7 @@ impl RsMark {
             }
         }
         if let Some((_, t)) = self.shortcut_buffer.last() {
-            if Instant::now().duration_since(*t).as_millis() > 200 {
+            if Instant::now().duration_since(*t).as_millis() > self.settings.key_combo_trigger_ms {
                 let shortcut = self
                     .shortcut_buffer
                     .iter()
