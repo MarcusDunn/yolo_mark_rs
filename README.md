@@ -21,7 +21,7 @@ So I've resolved these + some quality of life features of my own and this is the
 - [x] Add a limit to the cache (the cache EATS memory if you annotate enough images, you can resize to clear cache for
   now)
 
-- [ ] Multi-digit names shortcuts (type 1 1 quickly to get names #11)
+- [x] Multi-digit names shortcuts (type 1 1 quickly to get names #11)
 
 - [ ] Drag boxes
 
@@ -49,3 +49,6 @@ On linux there is also some extra libs needed for egui to work. Debian-based dis
 following (for other distros it is left as an exercise to the reader)
 
 `sudo apt-get install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev`
+
+The default Keybindings are `W` to go up a name `S` to go down. `A` for prev image `D` for next. you can select names 
+by also typing them out quickly. 

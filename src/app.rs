@@ -1,5 +1,6 @@
 use std::convert::TryFrom;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::time::Instant;
 pub use std::time::{Duration, SystemTime};
 
 use eframe::egui::{
@@ -12,6 +13,7 @@ use crate::app::arguments::Arguments;
 use crate::app::bbox::BBox;
 use crate::app::image_cache::{ImageCache, ImageLookup};
 use crate::app::images::Images;
+use crate::app::keyboard_mapping::zero_to_nine::ZeroToNine;
 use crate::app::keyboard_mapping::{Action, KeyboardMapping};
 use crate::app::names::Names;
 
@@ -33,6 +35,7 @@ pub struct RsMark {
     current_boxes: Vec<BBox>,
     drag_start: Option<Pos2>,
     drag_diff: Option<Pos2>,
+    shortcut_buffer: Vec<(ZeroToNine, Instant)>,
 }
 
 mod names;
@@ -85,6 +88,7 @@ impl RsMark {
             current_boxes: Vec::new(),
             drag_start: None,
             drag_diff: None,
+            shortcut_buffer: Vec::new(),
         }
     }
 
@@ -167,6 +171,27 @@ impl RsMark {
         if let Some(box_inx) = self.selected_box {
             if self.key_map.is_triggered(Action::RemoveBox, ctx) {
                 self.current_boxes.remove(box_inx);
+            }
+        }
+        if let Some((_, t)) = self.shortcut_buffer.last() {
+            if Instant::now().duration_since(*t).as_millis() > 200 {
+                let shortcut = self
+                    .shortcut_buffer
+                    .iter()
+                    .fold(String::new(), |acc, (ZeroToNine(n), _)| {
+                        format!("{}{}", acc, n)
+                    })
+                    .parse::<usize>()
+                    .unwrap();
+                if self.names.len() > shortcut {
+                    self.selected_name = shortcut;
+                }
+                self.shortcut_buffer.clear()
+            }
+        }
+        for i in ZeroToNine::iter() {
+            if self.key_map.is_triggered(Action::NameNumber(i), ctx) {
+                self.shortcut_buffer.push((i, Instant::now()))
             }
         }
     }
@@ -280,8 +305,10 @@ impl RsMark {
                 .always_show_scroll(false)
                 .show(ui, |ui| {
                     for i in 0..self.names.len() {
-                        let names_resp =
-                            ui.selectable_label(self.selected_name == i, &self.names[i]);
+                        let names_resp = ui.selectable_label(
+                            self.selected_name == i,
+                            &format!("{}: {}", i, self.names[i]),
+                        );
                         if names_resp.clicked() {
                             self.selected_name = i
                         }
