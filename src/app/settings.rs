@@ -8,7 +8,7 @@ where
     fn fill(&self) -> T;
 }
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, Debug)]
 pub struct Settings {
     pub key_combo_trigger_ms: u128,
 }

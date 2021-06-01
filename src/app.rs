@@ -1,10 +1,12 @@
 use std::convert::TryFrom;
+use std::fs::File;
+use std::io::{LineWriter, Write};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Instant;
 pub use std::time::{Duration, SystemTime};
 
 use eframe::egui::{
-    CtxRef, Image, InnerResponse, Pos2, Rect, Sense, TextEdit, TextureId, Ui, Vec2,
+    CentralPanel, CtxRef, Image, InnerResponse, Pos2, Rect, Sense, TextEdit, TextureId, Ui, Vec2,
 };
 use eframe::epi::Frame;
 use eframe::{egui, epi};
@@ -42,8 +44,28 @@ pub struct RsMark {
 }
 
 impl RsMark {
-    pub(crate) fn display_edit_settings(&self, _ctx: &CtxRef, _frame: &mut Frame<'_>) {
-        todo!()
+    pub(crate) fn display_edit_settings(&mut self, ctx: &CtxRef, frame: &mut Frame<'_>) {
+        egui::TopPanel::top("top info panel").show(ctx, |ui| {
+            egui::menu::bar(ui, |ui| {
+                egui::menu::menu(ui, "File ", |ui| {
+                    if ui.button("Label").clicked() {
+                        self.page = Page::Label
+                    };
+                    if ui.button("Quit").clicked() {
+                        frame.quit()
+                    }
+                })
+            })
+        });
+        CentralPanel::default().show(ctx, |ui| {
+            ui.label("key_combo_trigger_ms");
+            let mut key_combo_trigger_ms = self.settings.key_combo_trigger_ms.to_string();
+            if ui.text_edit_singleline(&mut key_combo_trigger_ms).changed() {
+                if let Ok(new) = key_combo_trigger_ms.parse() {
+                    self.settings.key_combo_trigger_ms = new;
+                }
+            }
+        });
     }
 }
 
@@ -175,6 +197,29 @@ impl epi::App for RsMark {
                     self.current_boxes, err
                 )
             });
+        match File::with_options()
+            .create(true)
+            .write(true)
+            .open("settings.json")
+        {
+            Ok(f) => {
+                let clear_result = f.set_len(0);
+                let mut lw = LineWriter::new(f);
+                lw.write_all(
+                    serde_json::to_string(&self.settings)
+                        .expect("failed to parse settings")
+                        .as_bytes(),
+                )
+                .expect("FAILED TO WRITE SETTINGS ");
+                clear_result.expect("failed to clear the file before writing settings, this has possibly left the settings file in an invalid state")
+            }
+            Err(err) => {
+                println!(
+                    "FAILED TO SAVE SETTINGS ON EXIT {:#?} \n\n due to {}",
+                    self.settings, err
+                )
+            }
+        }
     }
 
     fn name(&self) -> &str {
