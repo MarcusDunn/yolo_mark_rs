@@ -18,26 +18,16 @@ So I've resolved these + some quality of life features of my own and this is the
 ---
 # Roadmap
 
-- [x] Add a limit to the cache (the cache EATS memory if you annotate enough images, you can resize to clear cache for
-  now)
-
-- [x] Multi-digit names shortcuts (type 1 1 quickly to get names #11)
-
-- [ ] Changing settings in GUI (and more settings such as box thickness and alpha)
-  
+- [x] Add a limit to the cache
+- [x] Multi-digit names shortcuts
+- [ ] Changing settings in GUI
+- [ ] Scroll to change names
 - [ ] Drag boxes
-
 - [ ] Make already trained yolo predict boxes and allow the user to correct them (VoTT style)
-
 - [ ] Use modifier keys in some useful way (control + increment name = increment x 5?)
-
 - [ ] Show some annotation meta-data (labels per class and such)
-
-- [ ] Label images outside of local filesystem (ssh?)
-
-- [ ] Compile to WASM and run on web (long term)
-
-- [ ] Abstract out traits to allow other export formats and annotation styles
+- [ ] Label images outside of local filesystem (likley will have to transfer to an async runtime)
+- [ ] Compile to WASM and run on web 
 
 # Running
 
@@ -51,4 +41,4 @@ following (for other distros it is left as an exercise to the reader)
 `sudo apt-get install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev`
 
 The default Keybindings are `W` to go up a name `S` to go down. `A` for prev image `D` for next. you can select names 
-by also typing them out quickly. 
+by also typing them out quickly. `C` clears all tags and `R` removes the one you are currently hovered over.
