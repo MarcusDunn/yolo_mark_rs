@@ -13,16 +13,19 @@ use eframe::{egui, epi};
 
 use crate::app::arguments::Arguments;
 use crate::app::bbox::{BBox, BBoxError};
+use crate::app::drag_status::DragStatus;
 use crate::app::image_cache::{ImageCache, ImageLookup};
 use crate::app::images::Images;
 use crate::app::keyboard_mapping::zero_to_nine::ZeroToNine;
 use crate::app::keyboard_mapping::{Action, KeyboardMapping};
-use crate::app::names::Names;
 use crate::app::settings::Settings;
 
+mod drag_status;
 mod image_cache;
 mod image_file;
+mod images;
 pub mod keyboard_mapping;
+mod settings;
 
 pub struct RsMark {
     // index of box in current_boxes
@@ -33,27 +36,13 @@ pub struct RsMark {
     key_map: KeyboardMapping,
     current_index: AtomicUsize,
     images: Images,
-    names: Names,
+    names: Vec<String>,
     selected_name: usize,
     image_cache: ImageCache,
     current_image: Option<(TextureId, Vec2)>,
     current_boxes: Vec<BBox>,
     drag: DragStatus,
     shortcut_buffer: Vec<(ZeroToNine, Instant)>,
-}
-
-struct DragStatus {
-    drag_start: Option<Pos2>,
-    drag_diff: Option<Pos2>,
-}
-
-impl DragStatus {
-    fn empty() -> DragStatus {
-        DragStatus {
-            drag_start: None,
-            drag_diff: None,
-        }
-    }
 }
 
 impl RsMark {
@@ -86,12 +75,6 @@ enum Page {
     Label,
     Settings,
 }
-
-mod names;
-
-mod images;
-
-mod settings;
 
 impl RsMark {
     pub(crate) fn display_info(
@@ -289,6 +272,20 @@ impl RsMark {
                 self.shortcut_buffer.push((i, Instant::now()))
             }
         }
+
+        if ctx.input().scroll_delta.y < 0.0 {
+            self.selected_name = if self.selected_name + 1 >= self.names.len() {
+                0
+            } else {
+                self.selected_name + 1
+            }
+        } else if ctx.input().scroll_delta.y > 0.0 {
+            self.selected_name = if self.selected_name == 0 {
+                self.names.len()
+            } else {
+                self.selected_name - 1
+            }
+        }
     }
 }
 
@@ -309,8 +306,7 @@ impl RsMark {
                     },
                 };
                 if img_resp.drag_started() {
-                    self.drag.drag_start = img_resp.interact_pointer_pos();
-                    self.drag.drag_diff = Some(Pos2::ZERO)
+                    self.drag.start(img_resp.interact_pointer_pos().unwrap());
                 }
                 if let Some(curr_drag_diff) = self.drag.drag_diff {
                     self.drag.drag_diff = Some(curr_drag_diff + img_resp.drag_delta())
@@ -329,8 +325,7 @@ impl RsMark {
                             Err(err) => println!("error creating box {}", err),
                         }
                     }
-                    self.drag.drag_diff = None;
-                    self.drag.drag_start = None;
+                    self.drag.clear()
                 }
                 self.paint_boxes(&ui, rect)
             } else {

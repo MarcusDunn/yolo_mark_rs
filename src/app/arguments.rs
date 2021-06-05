@@ -9,7 +9,6 @@ use std::num::ParseIntError;
 use std::path::Path;
 
 use crate::app::images::Images;
-use crate::app::names::Names;
 
 pub enum ArgumentError {
     InvalidNumber(String),
@@ -38,11 +37,11 @@ impl Display for ArgumentError {
 
 pub struct Arguments {
     pub image_dir: Images,
-    pub names: Names,
+    pub names: Vec<String>,
 }
 
 impl Arguments {
-    fn new(image_dir: ReadDir, names: Names) -> Result<Arguments, ArgumentError> {
+    fn new(image_dir: ReadDir, names: Vec<String>) -> Result<Arguments, ArgumentError> {
         let images = image_dir
             .map(|r| r.expect("failed to read a directory entry"))
             .map(|r| r.try_into())
@@ -86,7 +85,10 @@ pub fn wrangle_args(args: Args) -> Result<Arguments, ArgumentError> {
                 Err(err) => return Err(ArgumentError::ReadError(err.to_string())),
             };
             let names = match File::open(names) {
-                Ok(f) => match BufReader::new(f).lines().collect::<Result<Names, _>>() {
+                Ok(f) => match BufReader::new(f)
+                    .lines()
+                    .collect::<Result<Vec<String>, _>>()
+                {
                     Ok(lines) => lines,
                     Err(err) => return Err(ArgumentError::ReadError(err.to_string())),
                 },
