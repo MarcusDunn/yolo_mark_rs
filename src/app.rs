@@ -56,7 +56,7 @@ impl RsMark {
                     if ui.button("Quit").clicked() {
                         frame.quit()
                     }
-                })
+                });
             })
         });
         CentralPanel::default().show(ctx, |ui| {
@@ -92,6 +92,11 @@ impl RsMark {
                         frame.quit()
                     }
                 });
+                if ui.button("Next").clicked() {
+                    self.handle_index_change(1)
+                } else if ui.button("Prev").clicked() {
+                    self.handle_index_change(-1)
+                }
                 let button_resp = ui.button("Jump to image:");
                 let resp = ui.add(
                     TextEdit::singleline(&mut self.current_image_input_text).desired_width(10.0),
