@@ -6,8 +6,8 @@ use std::time::Instant;
 pub use std::time::{Duration, SystemTime};
 
 use eframe::egui::{
-    Align, CentralPanel, CtxRef, Image, InnerResponse, Pos2, Rect, Sense, TextEdit, TextureId, Ui,
-    Vec2,
+    Align, Align2, CentralPanel, CtxRef, Image, InnerResponse, Painter, Pos2, Rect, Sense,
+    TextEdit, TextStyle, TextureId, Ui, Vec2,
 };
 use eframe::epi::Frame;
 use eframe::{egui, epi};
@@ -347,7 +347,18 @@ impl RsMark {
                     }
                     self.drag.clear();
                 }
-                self.paint_boxes(&ui, rect);
+                let painter = self.paint_boxes(&ui, rect);
+                if let Some(pos) = ctx.input().pointer.hover_pos() {
+                    if let Some(text) = self.names.get(self.selected_name) {
+                        painter.text(
+                            pos,
+                            Align2::CENTER_BOTTOM,
+                            text.clone(),
+                            TextStyle::Heading,
+                            eframe::egui::Color32::BLACK,
+                        );
+                    }
+                }
             } else {
                 let get_result = self.image_cache.get(
                     ImageLookup {
@@ -374,7 +385,7 @@ impl RsMark {
         })
     }
 
-    fn paint_boxes(&mut self, ui: &&mut Ui, rect: Rect) {
+    fn paint_boxes(&mut self, ui: &&mut Ui, rect: Rect) -> Painter {
         let painter = &mut ui.painter_at(rect);
         self.selected_box = None;
         if let (Some(drag_start), Some(drag_diff)) = (self.drag.drag_start, self.drag.drag_diff) {
@@ -406,7 +417,8 @@ impl RsMark {
         if let Some(bbox) = self.selected_box {
             let rect = self.current_boxes[bbox].draw(painter, 255, true);
             self.current_boxes[bbox].draw_text(painter, &self.names, rect, 255, true);
-        }
+        };
+        painter.clone()
     }
 }
 
