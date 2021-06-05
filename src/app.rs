@@ -38,9 +38,22 @@ pub struct RsMark {
     image_cache: ImageCache,
     current_image: Option<(TextureId, Vec2)>,
     current_boxes: Vec<BBox>,
+    drag: DragStatus,
+    shortcut_buffer: Vec<(ZeroToNine, Instant)>,
+}
+
+struct DragStatus {
     drag_start: Option<Pos2>,
     drag_diff: Option<Pos2>,
-    shortcut_buffer: Vec<(ZeroToNine, Instant)>,
+}
+
+impl DragStatus {
+    fn empty() -> DragStatus {
+        DragStatus {
+            drag_start: None,
+            drag_diff: None,
+        }
+    }
 }
 
 impl RsMark {
@@ -138,8 +151,7 @@ impl RsMark {
             image_cache: ImageCache::new(Vec2::new(500.0, 500.0)),
             current_image: None,
             current_boxes: Vec::new(),
-            drag_start: None,
-            drag_diff: None,
+            drag: DragStatus::empty(),
             shortcut_buffer: Vec::new(),
         }
     }
@@ -297,14 +309,16 @@ impl RsMark {
                     },
                 };
                 if img_resp.drag_started() {
-                    self.drag_start = img_resp.interact_pointer_pos();
-                    self.drag_diff = Some(Pos2::ZERO)
+                    self.drag.drag_start = img_resp.interact_pointer_pos();
+                    self.drag.drag_diff = Some(Pos2::ZERO)
                 }
-                if let Some(curr_drag_diff) = self.drag_diff {
-                    self.drag_diff = Some(curr_drag_diff + img_resp.drag_delta())
+                if let Some(curr_drag_diff) = self.drag.drag_diff {
+                    self.drag.drag_diff = Some(curr_drag_diff + img_resp.drag_delta())
                 }
                 if img_resp.drag_released() {
-                    if let (Some(drag_srt), Some(drag_diff)) = (self.drag_start, self.drag_diff) {
+                    if let (Some(drag_srt), Some(drag_diff)) =
+                        (self.drag.drag_start, self.drag.drag_diff)
+                    {
                         match BBox::from_two_points_and_rect(
                             self.selected_name,
                             rect,
@@ -315,8 +329,8 @@ impl RsMark {
                             Err(err) => println!("error creating box {}", err),
                         }
                     }
-                    self.drag_diff = None;
-                    self.drag_start = None;
+                    self.drag.drag_diff = None;
+                    self.drag.drag_start = None;
                 }
                 self.paint_boxes(&ui, rect)
             } else {
@@ -347,7 +361,7 @@ impl RsMark {
     fn paint_boxes(&mut self, ui: &&mut Ui, rect: Rect) {
         let painter = &mut ui.painter_at(rect);
         self.selected_box = None;
-        if let (Some(drag_start), Some(drag_diff)) = (self.drag_start, self.drag_diff) {
+        if let (Some(drag_start), Some(drag_diff)) = (self.drag.drag_start, self.drag.drag_diff) {
             match BBox::from_two_points_and_rect(self.selected_name, rect, drag_start, drag_diff) {
                 Ok(bbox) => {
                     bbox.draw(painter, 0, true);
