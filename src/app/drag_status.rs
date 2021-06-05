@@ -8,7 +8,7 @@ pub struct DragStatus {
 impl DragStatus {
     pub(crate) fn start(&mut self, pos: Pos2) {
         self.drag_start = Some(pos);
-        self.drag_diff = None;
+        self.drag_diff = Some(Pos2::ZERO);
     }
 }
 
