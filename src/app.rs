@@ -6,7 +6,8 @@ use std::time::Instant;
 pub use std::time::{Duration, SystemTime};
 
 use eframe::egui::{
-    CentralPanel, CtxRef, Image, InnerResponse, Pos2, Rect, Sense, TextEdit, TextureId, Ui, Vec2,
+    Align, CentralPanel, CtxRef, Image, InnerResponse, Pos2, Rect, Sense, TextEdit, TextureId, Ui,
+    Vec2,
 };
 use eframe::epi::Frame;
 use eframe::{egui, epi};
@@ -414,10 +415,12 @@ impl RsMark {
         egui::SidePanel::left("side panel", 200.0).show(ctx, |ui| {
             egui::ScrollArea::auto_sized().show(ui, |ui| {
                 for i in 0..self.names.len() {
-                    let names_resp = ui.selectable_label(
-                        self.selected_name == i,
-                        &format!("{}: {}", i, self.names[i]),
-                    );
+                    let checked = self.selected_name == i;
+                    let names_resp =
+                        ui.selectable_label(checked, &format!("{}: {}", i, self.names[i]));
+                    if checked {
+                        names_resp.scroll_to_me(Align::Center);
+                    }
                     if names_resp.clicked() {
                         self.selected_name = i;
                     }
