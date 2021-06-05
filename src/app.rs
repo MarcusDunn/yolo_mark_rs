@@ -347,13 +347,14 @@ impl RsMark {
                     }
                     self.drag.clear();
                 }
-                let painter = self.paint_boxes(&ui, rect);
+                let painter = &mut ui.painter_at(rect);
+                self.paint_boxes(&ui, painter);
                 if let Some(pos) = ctx.input().pointer.hover_pos() {
                     if let Some(text) = self.names.get(self.selected_name) {
                         painter.text(
                             pos,
                             Align2::CENTER_BOTTOM,
-                            text.clone(),
+                            text,
                             TextStyle::Heading,
                             eframe::egui::Color32::BLACK,
                         );
@@ -385,11 +386,15 @@ impl RsMark {
         })
     }
 
-    fn paint_boxes(&mut self, ui: &&mut Ui, rect: Rect) -> Painter {
-        let painter = &mut ui.painter_at(rect);
+    fn paint_boxes(&mut self, ui: &&mut Ui, painter: &mut Painter) {
         self.selected_box = None;
         if let (Some(drag_start), Some(drag_diff)) = (self.drag.drag_start, self.drag.drag_diff) {
-            match BBox::from_two_points_and_rect(self.selected_name, rect, drag_start, drag_diff) {
+            match BBox::from_two_points_and_rect(
+                self.selected_name,
+                painter.clip_rect(),
+                drag_start,
+                drag_diff,
+            ) {
                 Ok(bbox) => {
                     bbox.draw(painter, 0, true);
                 }
@@ -418,7 +423,6 @@ impl RsMark {
             let rect = self.current_boxes[bbox].draw(painter, 255, true);
             self.current_boxes[bbox].draw_text(painter, &self.names, rect, 255, true);
         };
-        painter.clone()
     }
 }
 
