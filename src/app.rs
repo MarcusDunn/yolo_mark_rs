@@ -6,8 +6,8 @@ use std::time::Instant;
 pub use std::time::{Duration, SystemTime};
 
 use eframe::egui::{
-    Align, Align2, CentralPanel, CtxRef, Image, InnerResponse, Painter, Pos2, Rect, Sense,
-    TextEdit, TextStyle, TextureId, Ui, Vec2,
+    Align, Align2, CentralPanel, Color32, CtxRef, Image, InnerResponse, Painter, Pos2, Rect, Sense,
+    Stroke, TextEdit, TextStyle, TextureId, Ui, Vec2,
 };
 use eframe::epi::Frame;
 use eframe::{egui, epi};
@@ -351,6 +351,14 @@ impl RsMark {
                 self.paint_boxes(&ui, painter);
                 if let Some(pos) = ctx.input().pointer.hover_pos() {
                     if let Some(text) = self.names.get(self.selected_name) {
+                        let rect = painter.text(
+                            pos,
+                            Align2::CENTER_BOTTOM,
+                            text,
+                            TextStyle::Heading,
+                            eframe::egui::Color32::BLACK,
+                        );
+                        painter.rect(rect, 0.0, Color32::from_white_alpha(100), Stroke::default());
                         painter.text(
                             pos,
                             Align2::CENTER_BOTTOM,
