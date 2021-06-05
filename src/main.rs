@@ -17,7 +17,7 @@ fn main() {
             eframe::run_native(Box::new(app), native_options);
         }
         Err(err) => {
-            println!("{}", err)
+            println!("{}", err);
         }
     }
 }

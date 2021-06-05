@@ -95,6 +95,14 @@ impl BBox {
         self.to_string()
     }
 
+    pub fn is_larger(&self, other: &Self) -> bool {
+        self.width > other.width && self.height > other.height
+    }
+
+    pub fn is_smaller(&self, other: &Self) -> bool {
+        !self.is_larger(other)
+    }
+
     pub fn from_two_points_and_rect(
         name: usize,
         rect: Rect,

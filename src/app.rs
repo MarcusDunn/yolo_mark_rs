@@ -51,10 +51,10 @@ impl RsMark {
             egui::menu::bar(ui, |ui| {
                 egui::menu::menu(ui, "File ", |ui| {
                     if ui.button("Label").clicked() {
-                        self.page = Page::Label
+                        self.page = Page::Label;
                     };
                     if ui.button("Quit").clicked() {
-                        frame.quit()
+                        frame.quit();
                     }
                 });
             })
@@ -86,16 +86,16 @@ impl RsMark {
             egui::menu::bar(ui, |ui| {
                 egui::menu::menu(ui, "File ", |ui| {
                     if ui.button("Settings").clicked() {
-                        self.page = Page::Settings
+                        self.page = Page::Settings;
                     }
                     if ui.button("Quit").clicked() {
-                        frame.quit()
+                        frame.quit();
                     }
                 });
                 if ui.button("Next").clicked() {
-                    self.handle_index_change(1)
+                    self.handle_index_change(1);
                 } else if ui.button("Prev").clicked() {
-                    self.handle_index_change(-1)
+                    self.handle_index_change(-1);
                 }
                 let button_resp = ui.button("Jump to image:");
                 let resp = ui.add(
@@ -124,6 +124,7 @@ pub mod arguments;
 mod bbox;
 
 impl RsMark {
+    #[must_use]
     pub fn yolo(Arguments { image_dir, names }: Arguments, key_map: KeyboardMapping) -> RsMark {
         println!("found {} images!", image_dir.len());
         RsMark {
@@ -136,7 +137,7 @@ impl RsMark {
             images: image_dir,
             names,
             selected_name: 0,
-            image_cache: ImageCache::new(Vec2::new(500.0, 500.0)),
+            image_cache: ImageCache::new(Vec2::new(500_f32, 500_f32)),
             current_image: None,
             current_boxes: Vec::new(),
             drag: DragStatus::empty(),
@@ -144,27 +145,31 @@ impl RsMark {
         }
     }
 
+    /// # Panics
+    /// this will panic if for whatever reason, the recently drawn labels fail to save.
+    /// This is intended to prevent the user from labeling images for hours and nothing saving.
     pub fn handle_index_change(&mut self, incr: isize) {
-        let index = if incr.is_negative() {
+        let prev_index = if incr.is_negative() {
             self.current_index
                 .fetch_sub(incr.abs() as usize, Ordering::SeqCst)
         } else {
             self.current_index
                 .fetch_add(incr.abs() as usize, Ordering::SeqCst)
         };
-        self.images[index]
+        let new_index = self.current_index.load(Ordering::SeqCst);
+        self.images[prev_index]
             .save_labels(&self.current_boxes)
             .unwrap_or_else(|err| panic!("error occurred while writing label {}", err));
         self.current_boxes = self
             .images
-            .get((index as isize + incr) as usize)
+            .get(new_index)
             .unwrap_or_else(|| {
-                self.current_index.store(index, Ordering::SeqCst);
-                &self.images[index]
+                // restores old index value that we know is valid.
+                self.current_index.store(prev_index, Ordering::SeqCst);
+                &self.images[prev_index]
             })
             .load_labels();
-        let index = self.current_index.load(Ordering::SeqCst);
-        self.current_image_input_text = index.to_string();
+        self.current_image_input_text = new_index.to_string();
         self.current_image = None;
     }
 }
@@ -192,10 +197,10 @@ impl epi::App for RsMark {
         self.images[self.current_index.load(Ordering::SeqCst)]
             .save_labels(&self.current_boxes)
             .unwrap_or_else(|err| {
-                panic!(
+                println!(
                     "FAILED TO SAVE FINAL ANNOTATIONS ON EXIT {:#?} \n\n DUE TO {}",
                     self.current_boxes, err
-                )
+                );
             });
         match File::with_options()
             .create(true)
@@ -211,13 +216,13 @@ impl epi::App for RsMark {
                         .as_bytes(),
                 )
                 .expect("FAILED TO WRITE SETTINGS ");
-                clear_result.expect("failed to clear the file before writing settings, this has possibly left the settings file in an invalid state")
+                clear_result.expect("failed to clear the file before writing settings, this has possibly left the settings file in an invalid state");
             }
             Err(err) => {
                 println!(
                     "FAILED TO SAVE SETTINGS ON EXIT {:#?} \n\n due to {}",
                     self.settings, err
-                )
+                );
             }
         }
     }
@@ -233,10 +238,10 @@ impl RsMark {
             self.current_boxes.clear();
         }
         if self.key_map.is_triggered(Action::NextImage, ctx) {
-            self.handle_index_change(1)
+            self.handle_index_change(1);
         }
         if self.key_map.is_triggered(Action::PrevImage, ctx) {
-            self.handle_index_change(-1)
+            self.handle_index_change(-1);
         }
         if self.key_map.is_triggered(Action::NextName, ctx) {
             self.selected_name += 1;
@@ -269,12 +274,12 @@ impl RsMark {
                 if self.names.len() > shortcut {
                     self.selected_name = shortcut;
                 }
-                self.shortcut_buffer.clear()
+                self.shortcut_buffer.clear();
             }
         }
         for i in ZeroToNine::iter() {
             if self.key_map.is_triggered(Action::NameNumber(i), ctx) {
-                self.shortcut_buffer.push((i, Instant::now()))
+                self.shortcut_buffer.push((i, Instant::now()));
             }
         }
 
@@ -298,7 +303,7 @@ impl RsMark {
     fn display_images(&mut self, ctx: &CtxRef, frame: &mut Frame<'_>) -> InnerResponse<()> {
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.image_cache.set_size(ui.available_size()) {
-                self.handle_index_change(0)
+                self.handle_index_change(0);
             }
             if let Some((texture_id, size)) = self.current_image {
                 let img = Image::new(texture_id, size).sense(Sense::click_and_drag());
@@ -314,7 +319,7 @@ impl RsMark {
                     self.drag.start(img_resp.interact_pointer_pos().unwrap());
                 }
                 if let Some(curr_drag_diff) = self.drag.drag_diff {
-                    self.drag.drag_diff = Some(curr_drag_diff + img_resp.drag_delta())
+                    self.drag.drag_diff = Some(curr_drag_diff + img_resp.drag_delta());
                 }
                 if img_resp.drag_released() {
                     if let (Some(drag_srt), Some(drag_diff)) =
@@ -330,9 +335,9 @@ impl RsMark {
                             Err(err) => println!("error creating box {}", err),
                         }
                     }
-                    self.drag.clear()
+                    self.drag.clear();
                 }
-                self.paint_boxes(&ui, rect)
+                self.paint_boxes(&ui, rect);
             } else {
                 let get_result = self.image_cache.get(
                     ImageLookup {
@@ -340,6 +345,7 @@ impl RsMark {
                     },
                     self.images.as_slice(),
                 );
+                // if the image dimensions are larger than
                 match get_result {
                     None => {
                         ui.label("Loading . . .");
@@ -366,10 +372,11 @@ impl RsMark {
                 Ok(bbox) => {
                     bbox.draw(painter, 0, true);
                 }
-                Err(BBoxError::InvalidField(_)) => { /*ignore too invalid boxes when dragging*/ }
+                Err(BBoxError::InvalidField(_)) => { /*ignore invalid boxes when dragging due to logging noise*/
+                }
                 Err(err) => {
                     println!("WARNING: error when creating box from drag {}", err);
-                    println!("ignoring for now . . .")
+                    println!("ignoring for now . . .");
                 }
             }
         }
@@ -378,13 +385,11 @@ impl RsMark {
             bbox.draw_text(painter, &self.names, rect, 100, false);
             if ui.rect_contains_pointer(rect) {
                 if let Some(selected) = self.selected_box {
-                    if self.current_boxes[selected].width > bbox.width
-                        && self.current_boxes[selected].height > bbox.height
-                    {
+                    if self.current_boxes[selected].is_larger(bbox) {
                         self.selected_box = Some(i);
                     }
                 } else {
-                    self.selected_box = Some(i)
+                    self.selected_box = Some(i);
                 }
             }
         }
@@ -405,7 +410,7 @@ impl RsMark {
                         &format!("{}: {}", i, self.names[i]),
                     );
                     if names_resp.clicked() {
-                        self.selected_name = i
+                        self.selected_name = i;
                     }
                 }
             });

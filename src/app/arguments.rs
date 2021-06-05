@@ -41,19 +41,27 @@ pub struct Arguments {
 }
 
 impl Arguments {
-    fn new(image_dir: ReadDir, names: Vec<String>) -> Result<Arguments, ArgumentError> {
+    fn new(image_dir: ReadDir, names: Vec<String>) -> Arguments {
         let images = image_dir
             .map(|r| r.expect("failed to read a directory entry"))
             .map(|r| r.try_into())
-            .filter_map(|r| r.ok())
+            .filter_map(std::result::Result::ok)
             .collect::<Images>();
-        Ok(Arguments {
+        Arguments {
             image_dir: images,
             names,
-        })
+        }
     }
 }
 
+/// # Errors
+/// This errors for many reasons:
+/// - if the number of arguments is wrong
+/// - if the first argument path does not exist
+/// - if the second argument path does not exist
+/// - if the first argument is not a directory
+/// - if the second argument is not a file
+/// - if the second arguments extension is not .names
 pub fn wrangle_args(args: Args) -> Result<Arguments, ArgumentError> {
     let args = args.collect::<Vec<_>>();
     if let [_, dir_path, names_path, _optional @ ..] = args.as_slice() {
@@ -94,7 +102,7 @@ pub fn wrangle_args(args: Args) -> Result<Arguments, ArgumentError> {
                 },
                 Err(err) => return Err(ArgumentError::ReadError(err.to_string())),
             };
-            Arguments::new(images_directory, names)
+            Ok(Arguments::new(images_directory, names))
         } else {
             Err(ArgumentError::InvalidFileType(format!(
                 "{} is not a names file",

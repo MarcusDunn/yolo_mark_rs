@@ -1,4 +1,5 @@
 use std::collections::{BTreeMap, BTreeSet};
+use std::convert::TryInto;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -10,7 +11,8 @@ use eframe::egui::{Color32, Vec2};
 use image::imageops::FilterType;
 use image::{GenericImageView, ImageError};
 
-use crate::app::image_file::{ImageFile, ImageFileError};
+use crate::app::image_file;
+use crate::app::image_file::ImageFile;
 
 type PixelsMessage = Result<(ImageLookup, ImageData), ImageParseError>;
 type ImageMessage = (ImageLookup, PathBuf);
@@ -24,27 +26,30 @@ pub struct ImageCache {
 }
 
 pub struct ImageData {
-    size: (u32, u32),
+    size: (usize, usize),
     pub(crate) data: Vec<Color32>,
 }
 
-impl ImageData {
-    pub fn size_usize(&self) -> (usize, usize) {
-        (self.size.0 as usize, self.size.1 as usize)
-    }
+impl ImageData {}
 
+impl ImageData {
+    #[allow(clippy::cast_precision_loss)]
     pub fn size_vec2(&self) -> Vec2 {
         Vec2 {
             x: self.size.0 as f32,
             y: self.size.1 as f32,
         }
     }
+    #[allow(clippy::cast_possible_truncation)]
+    pub(crate) fn size_usize(&self) -> (usize, usize) {
+        (self.size.0, self.size.1)
+    }
 }
 
 #[derive(Debug)]
 enum ImageParseError {
     ImageError(ImageError),
-    ImageFileError(ImageFileError),
+    ImageFileError(image_file::Error),
 }
 
 #[derive(Eq, PartialEq, Hash, Debug, Copy, Clone, Ord, PartialOrd)]
@@ -84,7 +89,14 @@ impl ImageCache {
                                             })
                                             .collect::<Vec<_>>();
                                         let data = ImageData {
-                                            size: resized.dimensions(),
+                                            size: (
+                                                resized.dimensions().0.try_into().expect(
+                                                    "dimensions.x did not fit into a usize",
+                                                ),
+                                                resized.dimensions().1.try_into().expect(
+                                                    "dimensions.x did not fit into a usize",
+                                                ),
+                                            ),
                                             data: pixels,
                                         };
                                         println!(
@@ -93,7 +105,7 @@ impl ImageCache {
                                         );
                                         let send_result = px_tx_clone.send(Ok((lookup, data)));
                                         if let Err(err) = send_result {
-                                            println!("failed to send {:?}", err)
+                                            println!("failed to send {:?}", err);
                                         }
                                     }
                                     Err(err) => {
@@ -103,7 +115,7 @@ impl ImageCache {
                                                 panic!(
                                                     "failed to send error {} from thread {}",
                                                     err, thread_num
-                                                )
+                                                );
                                             });
                                     }
                                 },
@@ -114,7 +126,7 @@ impl ImageCache {
                                             panic!(
                                                 "failed to send error {} from thread {}",
                                                 err, thread_num
-                                            )
+                                            );
                                         });
                                 }
                             }
@@ -140,17 +152,17 @@ impl ImageCache {
         if self.cache.len() > 50 {
             println!("cleaning cache!");
             self.cache.retain(|ImageLookup { index }, _| {
-                let diff = if lookup.index.lt(&index) {
+                let diff = if lookup.index.lt(index) {
                     index - lookup.index
                 } else {
                     lookup.index - index
                 };
                 let will_retain = diff < 25;
                 if !will_retain {
-                    println!("removing image {} from cache", index)
+                    println!("removing image {} from cache", index);
                 }
                 will_retain
-            })
+            });
         }
         for i in 0..=(num_cpus::get() / 2) {
             let guess_at_next = ImageLookup {
@@ -184,10 +196,10 @@ impl ImageCache {
                 Ok((lookup, pixels)) => {
                     self.cache.insert(lookup, pixels);
                     println!("cached {}", lookup.index);
-                    self.queued.retain(|q| *q != lookup)
+                    self.queued.retain(|q| *q != lookup);
                 }
                 Err(err) => {
-                    println!("error parsing image {:?}", err)
+                    println!("error parsing image {:?}", err);
                 }
             }
         }
@@ -197,11 +209,11 @@ impl ImageCache {
         println!("sending request for {:?}", request);
         match files.get(request.index) {
             None => {
-                println!("invalid request occurred with lookup {:?}", request)
+                println!("invalid request occurred with lookup {:?}", request);
             }
             Some(file) => {
                 if let Err(err) = self.image_sender.try_send((request, file.as_path())) {
-                    println!("failed to send due to {:?}", err)
+                    println!("failed to send due to {:?}", err);
                 }
             }
         }

@@ -1,8 +1,8 @@
 use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::fs::{DirEntry, File};
-use std::io::{BufRead, BufReader, BufWriter, Write};
-use std::path::PathBuf;
+use std::io::{BufRead, BufReader, BufWriter, ErrorKind, Write};
+use std::path::{Path, PathBuf};
 
 use image::{DynamicImage, ImageError};
 
@@ -14,13 +14,13 @@ static SUPPORTED_IMAGE_TYPES: [&str; 3] = ["jpg", "JPG", "JPEG"];
 pub struct ImageFile(PathBuf);
 
 #[derive(Debug)]
-pub enum ImageFileError {
+pub enum Error {
     NotAFile,
     NotAnImage,
 }
 
 impl TryFrom<DirEntry> for ImageFile {
-    type Error = ImageFileError;
+    type Error = Error;
 
     fn try_from(value: DirEntry) -> Result<Self, Self::Error> {
         ImageFile::new(value.path())
@@ -33,7 +33,7 @@ impl ImageFile {
             None => panic!("oh god oh fuck where is the file"),
             Some(p) => p.to_str().unwrap(),
         };
-        let txt_path = match self.0.file_stem().and_then(|stem| stem.to_str()) {
+        let txt_path = match self.0.file_stem().and_then(OsStr::to_str) {
             None => {
                 println!("could not get file stem of {:?}", self.0);
                 return Vec::new();
@@ -65,19 +65,26 @@ impl ImageFile {
         }
     }
 
-    /// panics if the path contains invalid unicode
     pub fn save_labels(&self, labels: &[BBox]) -> std::io::Result<()> {
-        let parent = self
-            .0
-            .parent()
-            .map(|parent| parent.to_str().expect("parent is not valid unicode"))
-            .unwrap_or("");
-        let stem = self
-            .0
-            .file_stem()
-            .expect("could not get the stem")
-            .to_str()
-            .expect("stem is not valid unicode");
+        let parent = self.0.parent().map_or(Some(""), Path::to_str);
+        let parent = match parent {
+            None => {
+                return Err(std::io::Error::new(
+                    ErrorKind::InvalidData,
+                    format!("{:?} was not valid unicode", parent),
+                ))
+            }
+            Some(str) => str,
+        };
+        let stem = match self.0.file_stem().and_then(OsStr::to_str) {
+            None => {
+                return Err(std::io::Error::new(
+                    ErrorKind::InvalidData,
+                    format!("could not create stem from {:?}", self),
+                ))
+            }
+            Some(stem) => stem,
+        };
         let txt_path = format!("{}/{}.txt", parent, stem);
         let f = File::with_options()
             .create(true)
@@ -85,7 +92,8 @@ impl ImageFile {
             .open(&txt_path)?;
         let result = f.set_len(0);
         BufWriter::new(f).write_all(Self::labels_to_string(labels).into_bytes().as_slice())?;
-        // we evaluate the result after writing so we don't exit without writing SOMETHING to the file even if it has garbage left over at the end
+        // we evaluate the result after writing so we don't exit without writing SOMETHING to the
+        // file even if it has garbage left over at the end
         result?;
         Ok(())
     }
@@ -93,7 +101,7 @@ impl ImageFile {
     fn labels_to_string(labels: &[BBox]) -> String {
         labels
             .iter()
-            .map(|bbox| bbox.yolo_format())
+            .map(BBox::yolo_format)
             .collect::<Vec<_>>()
             .join("\n")
     }
@@ -106,7 +114,7 @@ impl ImageFile {
         self.0.clone()
     }
 
-    pub(crate) fn new(entry: PathBuf) -> Result<ImageFile, ImageFileError> {
+    pub(crate) fn new(entry: PathBuf) -> Result<ImageFile, Error> {
         let is_supported_image_type = entry
             .as_path()
             .extension()
@@ -118,11 +126,11 @@ impl ImageFile {
             })
             .unwrap_or_default();
         if !entry.is_file() {
-            Err(ImageFileError::NotAFile)
-        } else if !is_supported_image_type {
-            Err(ImageFileError::NotAnImage)
-        } else {
+            Err(Error::NotAFile)
+        } else if is_supported_image_type {
             Ok(ImageFile(entry))
+        } else {
+            Err(Error::NotAnImage)
         }
     }
 }
