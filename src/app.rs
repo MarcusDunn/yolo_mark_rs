@@ -149,6 +149,7 @@ impl RsMark {
     /// this will panic if for whatever reason, the recently drawn labels fail to save.
     /// This is intended to prevent the user from labeling images for hours and nothing saving.
     pub fn handle_index_change(&mut self, incr: isize) {
+        let mut reverted_index = false;
         let prev_index = if incr.is_negative() {
             self.current_index
                 .fetch_sub(incr.abs() as usize, Ordering::SeqCst)
@@ -166,10 +167,18 @@ impl RsMark {
             .unwrap_or_else(|| {
                 // restores old index value that we know is valid.
                 self.current_index.store(prev_index, Ordering::SeqCst);
+                reverted_index = true;
                 &self.images[prev_index]
             })
             .load_labels();
-        self.current_image_input_text = new_index.to_string();
+        self.current_image_input_text = {
+            if reverted_index {
+                prev_index
+            } else {
+                new_index
+            }
+        }
+        .to_string();
         self.current_image = None;
     }
 }

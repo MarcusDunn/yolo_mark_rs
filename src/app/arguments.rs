@@ -47,6 +47,10 @@ impl Arguments {
             .map(|r| r.try_into())
             .filter_map(std::result::Result::ok)
             .collect::<Images>();
+        assert!(
+            images.len() > 0,
+            "the images directory must contain at least 1 image."
+        );
         Arguments {
             image_dir: images,
             names,

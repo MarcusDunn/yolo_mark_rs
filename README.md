@@ -31,7 +31,7 @@ So I've resolved these + some quality of life features of my own and this is the
 
 # Running
 
-I recommend installing the whole [toolchain](https://rustup.rs/) if you do not have a rust compiler already. Currently, only runs on Nightly (Once [65439](https://github.com/rust-lang/rust/issues/65439) is merged, this will no longer be the case)
+I recommend installing the whole [toolchain](https://rustup.rs/) if you do not have a rust compiler already. Currently, only runs on Nightly (Once [65439](https://github.com/rust-lang/rust/issues/65439) is on stable, this will no longer be the case)
 
 __Install Nightly:__\
 `rustup toolchain install nightly`
