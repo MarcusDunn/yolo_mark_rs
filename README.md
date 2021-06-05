@@ -21,12 +21,11 @@ So I've resolved these + some quality of life features of my own and this is the
 - [x] Add a limit to the cache
 - [x] Multi-digit names shortcuts
 - [ ] Changing settings in GUI
-- [ ] Scroll to change names
+- [X] Scroll to change names
 - [ ] Drag boxes
 - [ ] Make already trained yolo predict boxes and allow the user to correct them (VoTT style)
-- [ ] Use modifier keys in some useful way (control + increment name = increment x 5?)
 - [ ] Show some annotation meta-data (labels per class and such)
-- [ ] Label images outside of local filesystem (likley will have to transfer to an async runtime)
+- [ ] Label images outside local filesystem (likely will have to transfer to an async runtime)
 - [ ] Compile to WASM and run on web 
 
 # Running
