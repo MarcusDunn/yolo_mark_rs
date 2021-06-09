@@ -367,6 +367,34 @@ impl RsMark {
                             eframe::egui::Color32::BLACK,
                         );
                     }
+                    painter.rect_filled(
+                        Rect::from_two_pos(
+                            Pos2 {
+                                x: f32::INFINITY,
+                                y: pos.y,
+                            },
+                            Pos2 {
+                                x: f32::NEG_INFINITY,
+                                y: pos.y,
+                            },
+                        ),
+                        0.0,
+                        Color32::from_white_alpha(100),
+                    );
+                    painter.rect_filled(
+                        Rect::from_two_pos(
+                            Pos2 {
+                                x: pos.x,
+                                y: f32::NEG_INFINITY,
+                            },
+                            Pos2 {
+                                x: pos.x,
+                                y: f32::INFINITY,
+                            },
+                        ),
+                        0.0,
+                        Color32::from_white_alpha(100),
+                    );
                 }
             } else {
                 let get_result = self.image_cache.get(
