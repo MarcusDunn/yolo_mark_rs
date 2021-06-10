@@ -68,6 +68,31 @@ impl RsMark {
                     self.settings.key_combo_trigger_ms = new;
                 }
             }
+            ui.label("cross_hair_alpha");
+            let mut cross_hair_alpha = self.settings.cross_hair_alpha.to_string();
+            if ui.text_edit_singleline(&mut cross_hair_alpha).changed() {
+                if let Ok(new) = cross_hair_alpha.parse() {
+                    self.settings.cross_hair_alpha = new;
+                }
+            }
+            ui.label("bounding_box_alpha");
+            let mut bounding_box_alpha = self.settings.bounding_box_alpha.to_string();
+            if ui.text_edit_singleline(&mut bounding_box_alpha).changed() {
+                if let Ok(new) = bounding_box_alpha.parse() {
+                    self.settings.bounding_box_alpha = new;
+                }
+            }
+            ui.checkbox(
+                &mut self.settings.display_bounding_box_name,
+                "display_bounding_box_name",
+            );
+            ui.label("scroll_thresh");
+            let mut scroll_thresh = self.settings.scroll_thresh.to_string();
+            if ui.text_edit_singleline(&mut scroll_thresh).changed() {
+                if let Ok(new) = scroll_thresh.parse() {
+                    self.settings.scroll_thresh = new;
+                }
+            }
         });
     }
 }
@@ -128,13 +153,15 @@ impl RsMark {
     #[must_use]
     pub fn yolo(Arguments { image_dir, names }: Arguments, key_map: KeyboardMapping) -> RsMark {
         println!("found {} images!", image_dir.len());
+        let settings = Settings::from_file().unwrap_or_default();
+        let start_index = settings.start_img_index;
         RsMark {
             page: Page::Label,
-            settings: Settings::from_file().unwrap_or_default(),
+            settings,
             selected_box: None,
             current_image_input_text: 0.to_string(),
             key_map,
-            current_index: AtomicUsize::new(0),
+            current_index: AtomicUsize::new(start_index as usize),
             images: image_dir,
             names,
             selected_name: 0,
@@ -204,6 +231,7 @@ impl epi::App for RsMark {
     }
 
     fn on_exit(&mut self) {
+        self.settings.start_img_index = self.current_index.load(Ordering::SeqCst);
         self.images[self.current_index.load(Ordering::SeqCst)]
             .save_labels(&self.current_boxes)
             .unwrap_or_else(|err| {
@@ -293,15 +321,15 @@ impl RsMark {
             }
         }
 
-        if ctx.input().scroll_delta.y < 0.0 {
+        if ctx.input().scroll_delta.y < -self.settings.scroll_thresh {
             self.selected_name = if self.selected_name + 1 >= self.names.len() {
                 0
             } else {
                 self.selected_name + 1
             }
-        } else if ctx.input().scroll_delta.y > 0.0 {
+        } else if ctx.input().scroll_delta.y > self.settings.scroll_thresh {
             self.selected_name = if self.selected_name == 0 {
-                self.names.len()
+                self.names.len() - 1
             } else {
                 self.selected_name - 1
             }
@@ -349,53 +377,7 @@ impl RsMark {
                 }
                 let painter = &mut ui.painter_at(rect);
                 self.paint_boxes(&ui, painter);
-                if let Some(pos) = ctx.input().pointer.hover_pos() {
-                    if let Some(text) = self.names.get(self.selected_name) {
-                        let rect = painter.text(
-                            pos,
-                            Align2::CENTER_BOTTOM,
-                            text,
-                            TextStyle::Heading,
-                            eframe::egui::Color32::BLACK,
-                        );
-                        painter.rect(rect, 0.0, Color32::from_white_alpha(100), Stroke::default());
-                        painter.text(
-                            pos,
-                            Align2::CENTER_BOTTOM,
-                            text,
-                            TextStyle::Heading,
-                            eframe::egui::Color32::BLACK,
-                        );
-                    }
-                    painter.rect_filled(
-                        Rect::from_two_pos(
-                            Pos2 {
-                                x: f32::INFINITY,
-                                y: pos.y,
-                            },
-                            Pos2 {
-                                x: f32::NEG_INFINITY,
-                                y: pos.y,
-                            },
-                        ),
-                        0.0,
-                        Color32::from_white_alpha(100),
-                    );
-                    painter.rect_filled(
-                        Rect::from_two_pos(
-                            Pos2 {
-                                x: pos.x,
-                                y: f32::NEG_INFINITY,
-                            },
-                            Pos2 {
-                                x: pos.x,
-                                y: f32::INFINITY,
-                            },
-                        ),
-                        0.0,
-                        Color32::from_white_alpha(100),
-                    );
-                }
+                self.draw_cursor(ctx, painter);
             } else {
                 let get_result = self.image_cache.get(
                     ImageLookup {
@@ -422,6 +404,62 @@ impl RsMark {
         })
     }
 
+    fn draw_cursor(&mut self, ctx: &CtxRef, painter: &mut Painter) {
+        let alpha = self.settings.cross_hair_alpha;
+        if let Some(pos) = ctx.input().pointer.hover_pos() {
+            if let Some(text) = self.names.get(self.selected_name) {
+                let rect = painter.text(
+                    pos,
+                    Align2::CENTER_BOTTOM,
+                    text,
+                    TextStyle::Heading,
+                    eframe::egui::Color32::BLACK,
+                );
+                painter.rect(
+                    rect,
+                    0.0,
+                    Color32::from_white_alpha(alpha),
+                    Stroke::default(),
+                );
+                painter.text(
+                    pos,
+                    Align2::CENTER_BOTTOM,
+                    text,
+                    TextStyle::Heading,
+                    eframe::egui::Color32::BLACK,
+                );
+            }
+            painter.rect_stroke(
+                Rect::from_two_pos(
+                    Pos2 {
+                        x: f32::INFINITY,
+                        y: pos.y,
+                    },
+                    Pos2 {
+                        x: f32::NEG_INFINITY,
+                        y: pos.y,
+                    },
+                ),
+                0.0,
+                Stroke::new(1.0, Color32::from_white_alpha(alpha)),
+            );
+            painter.rect_stroke(
+                Rect::from_two_pos(
+                    Pos2 {
+                        x: pos.x,
+                        y: f32::NEG_INFINITY,
+                    },
+                    Pos2 {
+                        x: pos.x,
+                        y: f32::INFINITY,
+                    },
+                ),
+                0.0,
+                Stroke::new(1.0, Color32::from_white_alpha(alpha)),
+            );
+        }
+    }
+
     fn paint_boxes(&mut self, ui: &&mut Ui, painter: &mut Painter) {
         self.selected_box = None;
         if let (Some(drag_start), Some(drag_diff)) = (self.drag.drag_start, self.drag.drag_diff) {
@@ -432,7 +470,7 @@ impl RsMark {
                 drag_diff,
             ) {
                 Ok(bbox) => {
-                    bbox.draw(painter, 0, true);
+                    bbox.draw(painter, self.settings.bounding_box_alpha, true);
                 }
                 Err(BBoxError::InvalidField(_)) => { /*ignore invalid boxes when dragging due to logging noise*/
                 }
@@ -443,8 +481,16 @@ impl RsMark {
             }
         }
         for (i, bbox) in self.current_boxes.iter().enumerate() {
-            let rect = bbox.draw(painter, 100, false);
-            bbox.draw_text(painter, &self.names, rect, 100, false);
+            let rect = bbox.draw(painter, self.settings.bounding_box_alpha, false);
+            if self.settings.display_bounding_box_name {
+                bbox.draw_text(
+                    painter,
+                    &self.names,
+                    rect,
+                    self.settings.bounding_box_alpha,
+                    false,
+                );
+            }
             if ui.rect_contains_pointer(rect) {
                 if let Some(selected) = self.selected_box {
                     if self.current_boxes[selected].is_larger(bbox) {
@@ -456,8 +502,15 @@ impl RsMark {
             }
         }
         if let Some(bbox) = self.selected_box {
-            let rect = self.current_boxes[bbox].draw(painter, 255, true);
-            self.current_boxes[bbox].draw_text(painter, &self.names, rect, 255, true);
+            let rect =
+                self.current_boxes[bbox].draw(painter, self.settings.bounding_box_alpha, true);
+            self.current_boxes[bbox].draw_text(
+                painter,
+                &self.names,
+                rect,
+                self.settings.bounding_box_alpha,
+                true,
+            );
         };
     }
 }

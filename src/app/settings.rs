@@ -11,11 +11,21 @@ where
 #[derive(serde::Serialize, Debug)]
 pub struct Settings {
     pub key_combo_trigger_ms: u128,
+    pub cross_hair_alpha: u8,
+    pub bounding_box_alpha: u8,
+    pub display_bounding_box_name: bool,
+    pub scroll_thresh: f32,
+    pub start_img_index: usize,
 }
 
 #[derive(serde::Deserialize)]
 struct PartialSettings {
     key_combo_trigger_ms: Option<u128>,
+    cross_hair_alpha: Option<u8>,
+    bounding_box_alpha: Option<u8>,
+    display_bounding_box_name: Option<bool>,
+    scroll_thresh: Option<f32>,
+    start_img_index: Option<usize>,
 }
 
 impl Partial<Settings> for PartialSettings {
@@ -25,6 +35,15 @@ impl Partial<Settings> for PartialSettings {
             key_combo_trigger_ms: self
                 .key_combo_trigger_ms
                 .unwrap_or(default.key_combo_trigger_ms),
+            cross_hair_alpha: self.cross_hair_alpha.unwrap_or(default.cross_hair_alpha),
+            bounding_box_alpha: self
+                .bounding_box_alpha
+                .unwrap_or(default.bounding_box_alpha),
+            display_bounding_box_name: self
+                .display_bounding_box_name
+                .unwrap_or(default.display_bounding_box_name),
+            scroll_thresh: self.scroll_thresh.unwrap_or(default.scroll_thresh),
+            start_img_index: self.start_img_index.unwrap_or(default.start_img_index),
         }
     }
 }
@@ -33,6 +52,11 @@ impl Default for Settings {
     fn default() -> Self {
         Settings {
             key_combo_trigger_ms: 150,
+            cross_hair_alpha: 100,
+            bounding_box_alpha: 100,
+            display_bounding_box_name: true,
+            scroll_thresh: 0.0,
+            start_img_index: 0,
         }
     }
 }
