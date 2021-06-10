@@ -15,34 +15,40 @@ So I've resolved these + some quality of life features of my own and this is the
 ![img.png](img.png)
 
 ---
+
 # Roadmap
+
+I add features as I personally find certain tasks unergonomic or annoying, as a result this is pretty particular to my
+use case. Suggestions and polite feedback are welcome if you find something missing.
 
 - [x] Add a limit to the cache
 - [x] Multi-digit names shortcuts
-- [ ] Change all settings in GUI (WIP)
+- [x] Change settings in GUI
 - [X] Scroll to change name
-- [ ] Control over logging
-- [ ] Better error handling (warn users in GUI instead of logging in console)
 - [ ] Drag boxes
-- [ ] Make already trained yolo predict boxes and allow the user to correct them (VoTT style)
+- [ ] Resize Boxes
+- [ ] Make trained network predict boxes and allow the user to correct them (VoTT style)
 - [ ] Show some annotation meta-data (labels per class and such)
-- [ ] Label images outside local filesystem (likely will have to transfer to an async runtime)
-- [ ] Compile to WASM and run on web 
+- [ ] Move to async tasks file IO and image resizing.
+- [ ] Label images outside local filesystem
+- [ ] Compile to WASM and run on web
 
 # Running
 
-I recommend installing the whole [toolchain](https://rustup.rs/) if you do not have a rust compiler already. Currently, only runs on Nightly (Once [65439](https://github.com/rust-lang/rust/issues/65439) is on stable, this will no longer be the case)
+I recommend installing the whole [toolchain](https://rustup.rs/) if you do not have a rust compiler already. Currently,
+only runs on Nightly (Once [65439](https://github.com/rust-lang/rust/issues/65439) is on stable, this will no longer be
+the case)
 
 __Install Nightly:__\
 `rustup toolchain install nightly`
- 
+
 __Compile and Run:__\
 `cargo run --release <path to images> <path to names file>`
 
 Once I am updating this less frequently I'll make a point of releasing binaries for Windows and Mac.
 
-On linux there is also some extra libs needed for [egui](https://github.com/emilk/egui) (the graphics library this is built on) to work. Debian-based distros you can run the
-following
+On Linux there is also some extra libs needed for [egui](https://github.com/emilk/egui) (the graphics library this is
+built on) to work; Debian-based distros you can run the following
 
 `sudo apt-get install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev`
 
@@ -50,7 +56,7 @@ For other distros installing these dependencies is left as an exercise to the re
 
 # Keybindings
 
-- `W` to go up a name 
+- `W` to go up a name
 - `S` to go down
 - `A` for prev image
 - `D` for next.
@@ -62,6 +68,6 @@ as well as type out the index of the name you want to select (the timing thresho
 
 # Known Issues
 
-- despite the image being loaded, it does not display until an event occurs forcing an update.
-- currently, does not respect exif data (such as rotation)
+- Despite an image being loaded, it will not display until an event occurs forcing an update.
+- Does not respect exif data (such as rotation)
 
