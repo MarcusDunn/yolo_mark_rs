@@ -1,3 +1,5 @@
+use std::collections::btree_map::Entry;
+use std::collections::BTreeMap;
 use std::convert::TryFrom;
 use std::fs::File;
 use std::io::{LineWriter, Write};
@@ -44,22 +46,17 @@ pub struct RsMark {
     current_boxes: Vec<BBox>,
     drag: DragStatus,
     shortcut_buffer: Vec<(ZeroToNine, Instant)>,
+    stats: Stats,
+}
+
+#[derive(Default)]
+struct Stats {
+    annotation_freq: BTreeMap<String, u32>,
 }
 
 impl RsMark {
     pub(crate) fn display_edit_settings(&mut self, ctx: &CtxRef, frame: &mut Frame<'_>) {
-        egui::TopPanel::top("top info panel").show(ctx, |ui| {
-            egui::menu::bar(ui, |ui| {
-                egui::menu::menu(ui, "File ", |ui| {
-                    if ui.button("Label").clicked() {
-                        self.page = Page::Label;
-                    };
-                    if ui.button("Quit").clicked() {
-                        frame.quit();
-                    }
-                });
-            })
-        });
+        self.TopBarFileMenu(ctx, frame);
         CentralPanel::default().show(ctx, |ui| {
             ui.label("key_combo_trigger_ms");
             let mut key_combo_trigger_ms = self.settings.key_combo_trigger_ms.to_string();
@@ -100,6 +97,7 @@ impl RsMark {
 enum Page {
     Label,
     Settings,
+    Stats,
 }
 
 impl RsMark {
@@ -114,14 +112,17 @@ impl RsMark {
                     if ui.button("Settings").clicked() {
                         self.page = Page::Settings;
                     }
+                    if ui.button("Stats").clicked() {
+                        self.page = Page::Stats;
+                    }
                     if ui.button("Quit").clicked() {
                         frame.quit();
                     }
                 });
-                if ui.button("Next").clicked() {
-                    self.handle_index_change(1);
-                } else if ui.button("Prev").clicked() {
+                if ui.button("Prev").clicked() {
                     self.handle_index_change(-1);
+                } else if ui.button("Next").clicked() {
+                    self.handle_index_change(1);
                 }
                 let button_resp = ui.button("Jump to image:");
                 let resp = ui.add(
@@ -170,6 +171,7 @@ impl RsMark {
             current_boxes: Vec::new(),
             drag: DragStatus::empty(),
             shortcut_buffer: Vec::new(),
+            stats: Default::default(),
         }
     }
 
@@ -222,6 +224,14 @@ impl epi::App for RsMark {
                 self.display_images(ctx, frame);
             }
             Page::Settings => self.display_edit_settings(ctx, frame),
+            Page::Stats => {
+                self.TopBarFileMenu(ctx, frame);
+                CentralPanel::default().show(ctx, |ui| {
+                    for (name, freq) in &self.stats.annotation_freq {
+                        ui.label(format!("{}: {}", name, freq));
+                    }
+                });
+            }
         }
     }
 
@@ -369,7 +379,19 @@ impl RsMark {
                             drag_srt,
                             drag_diff,
                         ) {
-                            Ok(bbox) => self.current_boxes.push(bbox),
+                            Ok(bbox) => {
+                                match self
+                                    .stats
+                                    .annotation_freq
+                                    .entry(self.names[self.selected_name].clone())
+                                {
+                                    Entry::Vacant(v) => {
+                                        v.insert(1);
+                                    }
+                                    Entry::Occupied(mut o) => *o.get_mut() += 1,
+                                }
+                                self.current_boxes.push(bbox)
+                            }
                             Err(err) => println!("error creating box {}", err),
                         }
                     }
@@ -531,6 +553,23 @@ impl RsMark {
                     }
                 }
             });
+        });
+    }
+}
+
+impl RsMark {
+    fn top_bar_file_menu(&mut self, ctx: &CtxRef, frame: &mut Frame) {
+        egui::TopPanel::top("top info panel").show(ctx, |ui| {
+            egui::menu::bar(ui, |ui| {
+                egui::menu::menu(ui, "File ", |ui| {
+                    if ui.button("Label").clicked() {
+                        self.page = Page::Label;
+                    };
+                    if ui.button("Quit").clicked() {
+                        frame.quit();
+                    }
+                });
+            })
         });
     }
 }
