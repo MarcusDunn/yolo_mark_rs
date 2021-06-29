@@ -56,7 +56,7 @@ struct Stats {
 
 impl RsMark {
     pub(crate) fn display_edit_settings(&mut self, ctx: &CtxRef, frame: &mut Frame<'_>) {
-        self.TopBarFileMenu(ctx, frame);
+        self.top_bar_file_menu(ctx, frame);
         CentralPanel::default().show(ctx, |ui| {
             ui.label("key_combo_trigger_ms");
             let mut key_combo_trigger_ms = self.settings.key_combo_trigger_ms.to_string();
@@ -225,7 +225,7 @@ impl epi::App for RsMark {
             }
             Page::Settings => self.display_edit_settings(ctx, frame),
             Page::Stats => {
-                self.TopBarFileMenu(ctx, frame);
+                self.top_bar_file_menu(ctx, frame);
                 CentralPanel::default().show(ctx, |ui| {
                     for (name, freq) in &self.stats.annotation_freq {
                         ui.label(format!("{}: {}", name, freq));
