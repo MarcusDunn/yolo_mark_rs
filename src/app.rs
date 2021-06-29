@@ -558,7 +558,7 @@ impl RsMark {
 }
 
 impl RsMark {
-    fn top_bar_file_menu(&mut self, ctx: &CtxRef, frame: &mut Frame) {
+    fn top_bar_file_menu(&mut self, ctx: &CtxRef, frame: &mut Frame<'_>) {
         egui::TopPanel::top("top info panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 egui::menu::menu(ui, "File ", |ui| {
