@@ -1,5 +1,4 @@
-use std::collections::btree_map::Entry;
-use std::collections::BTreeMap;
+use std::collections::btree_map::{BTreeMap, Entry};
 use std::convert::TryFrom;
 use std::fs::File;
 use std::io::{LineWriter, Write};
@@ -155,7 +154,7 @@ impl RsMark {
     pub fn yolo(Arguments { image_dir, names }: Arguments, key_map: KeyboardMapping) -> RsMark {
         println!("found {} images!", image_dir.len());
         let settings = Settings::from_file().unwrap_or_default();
-        let start_index = settings.start_img_index;
+        let start_index = usize::min(image_dir.len() - 1, settings.start_img_index);
         RsMark {
             page: Page::Label,
             settings,
