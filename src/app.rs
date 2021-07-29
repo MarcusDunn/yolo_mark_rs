@@ -46,6 +46,7 @@ pub struct RsMark {
     drag: DragStatus,
     shortcut_buffer: Vec<(ZeroToNine, Instant)>,
     stats: Stats,
+    allow_number_shortcuts: bool,
 }
 
 #[derive(Default)]
@@ -127,6 +128,12 @@ impl RsMark {
                 let resp = ui.add(
                     TextEdit::singleline(&mut self.current_image_input_text).desired_width(10.0),
                 );
+                if resp.gained_focus() {
+                    self.allow_number_shortcuts = false;
+                }
+                if resp.lost_focus() {
+                    self.allow_number_shortcuts = true;
+                }
                 if button_resp.clicked() || resp.lost_focus() {
                     match self.current_image_input_text.parse::<usize>() {
                         Ok(index) => {
@@ -171,6 +178,7 @@ impl RsMark {
             drag: DragStatus::empty(),
             shortcut_buffer: Vec::new(),
             stats: Default::default(),
+            allow_number_shortcuts: true,
         }
     }
 
@@ -324,9 +332,11 @@ impl RsMark {
                 self.shortcut_buffer.clear();
             }
         }
-        for i in ZeroToNine::iter() {
-            if self.key_map.is_triggered(Action::NameNumber(i), ctx) {
-                self.shortcut_buffer.push((i, Instant::now()));
+        if self.allow_number_shortcuts {
+            for i in ZeroToNine::iter() {
+                if self.key_map.is_triggered(Action::NameNumber(i), ctx) {
+                    self.shortcut_buffer.push((i, Instant::now()));
+                }
             }
         }
 
