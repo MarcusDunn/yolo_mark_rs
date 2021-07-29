@@ -436,6 +436,11 @@ impl RsMark {
                         ui.label("try moving your mouse to force an update!");
                     }
                     Some(img) => {
+                        assert_eq!(
+                            img.size_usize().0 * img.size_usize().1,
+                            img.data.len(),
+                            "whoa there that's some janky image you got"
+                        );
                         self.current_image = Some((
                             frame
                                 .tex_allocator()
