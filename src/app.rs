@@ -429,7 +429,6 @@ impl RsMark {
                     },
                     self.images.as_slice(),
                 );
-                // if the image dimensions are larger than
                 match get_result {
                     None => {
                         ui.label("Loading . . .");

@@ -50,7 +50,7 @@ Once I am updating this less frequently I'll make a point of releasing binaries 
 On Linux there is also some extra libs needed for [egui](https://github.com/emilk/egui) (the graphics library this is
 built on) to work; Debian-based distros you can run the following
 
-`sudo apt-get install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev`
+`sudo apt-get install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev libxkbcommon-dev`
 
 For other distros installing these dependencies is left as an exercise to the reader
 
