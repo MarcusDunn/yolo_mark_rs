@@ -7,8 +7,8 @@ use std::time::Instant;
 pub use std::time::{Duration, SystemTime};
 
 use eframe::egui::{
-    Align, Align2, CentralPanel, Color32, CtxRef, Image, InnerResponse, Painter, Pos2, Rect, Sense,
-    Stroke, TextEdit, TextStyle, TextureId, Ui, Vec2,
+    Align, Align2, CentralPanel, Color32, CtxRef, Image, InnerResponse, Key, Painter, Pos2, Rect,
+    Sense, Stroke, TextEdit, TextStyle, TextureId, Ui, Vec2,
 };
 use eframe::epi::{Frame, Storage};
 use eframe::{egui, epi};
@@ -134,7 +134,10 @@ impl RsMark {
                 if resp.lost_focus() {
                     self.allow_number_shortcuts = true;
                 }
-                if button_resp.clicked() || resp.lost_focus() {
+                if button_resp.clicked()
+                    || resp.lost_focus()
+                    || ui.ctx().input().key_down(Key::Enter)
+                {
                     match self.current_image_input_text.parse::<usize>() {
                         Ok(index) => {
                             let curr = self.current_index.load(Ordering::SeqCst);
