@@ -431,12 +431,20 @@ impl RsMark {
                         ui.label("try moving your mouse to force an update!");
                     }
                     Some(img) => {
-                        self.current_image = Some((
-                            frame
-                                .tex_allocator()
-                                .alloc_srgba_premultiplied(img.size_usize(), img.data.as_slice()),
-                            img.size_vec2(),
-                        ));
+                        if img.size_usize().0 * img.size_usize().1 == img.data.len() {
+                            self.current_image = Some((
+                                frame.tex_allocator().alloc_srgba_premultiplied(
+                                    img.size_usize(),
+                                    img.data.as_slice(),
+                                ),
+                                img.size_vec2(),
+                            ));
+                        } else {
+                            ui.label(
+                                "something has gone catastrophically wrong, the app seems to \
+                                think its minimized, if you can see this please open an issue",
+                            );
+                        }
                     }
                 }
             }
