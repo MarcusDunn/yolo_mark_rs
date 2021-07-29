@@ -185,7 +185,7 @@ impl RsMark {
             current_boxes: Vec::new(),
             drag: DragStatus::empty(),
             shortcut_buffer: Vec::new(),
-            stats: Default::default(),
+            stats: Stats::default(),
             allow_number_shortcuts: true,
         }
     }
@@ -412,7 +412,7 @@ impl RsMark {
                                     }
                                     Entry::Occupied(mut o) => *o.get_mut() += 1,
                                 }
-                                self.current_boxes.push(bbox)
+                                self.current_boxes.push(bbox);
                             }
                             Err(err) => println!("error creating box {}", err),
                         }
@@ -436,17 +436,15 @@ impl RsMark {
                         ui.label("try moving your mouse to force an update!");
                     }
                     Some(img) => {
-                        assert_eq!(
-                            img.size_usize().0 * img.size_usize().1,
-                            img.data.len(),
-                            "whoa there that's some janky image you got"
-                        );
-                        self.current_image = Some((
-                            frame
-                                .tex_allocator()
-                                .alloc_srgba_premultiplied(img.size_usize(), img.data.as_slice()),
-                            img.size_vec2(),
-                        ));
+                        if img.size_usize() != (0, 0) {
+                            self.current_image = Some((
+                                frame.tex_allocator().alloc_srgba_premultiplied(
+                                    img.size_usize(),
+                                    img.data.as_slice(),
+                                ),
+                                img.size_vec2(),
+                            ));
+                        }
                     }
                 }
             }
