@@ -436,7 +436,7 @@ impl RsMark {
                         ui.label("try moving your mouse to force an update!");
                     }
                     Some(img) => {
-                        if img.size_usize() != (0, 0) {
+                        if !matches!(img.size_usize(), (0, _) | (_, 0)) {
                             self.current_image = Some((
                                 frame.tex_allocator().alloc_srgba_premultiplied(
                                     img.size_usize(),
