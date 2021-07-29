@@ -10,7 +10,7 @@ use eframe::egui::{
     Align, Align2, CentralPanel, Color32, CtxRef, Image, InnerResponse, Painter, Pos2, Rect, Sense,
     Stroke, TextEdit, TextStyle, TextureId, Ui, Vec2,
 };
-use eframe::epi::Frame;
+use eframe::epi::{Frame, Storage};
 use eframe::{egui, epi};
 
 use crate::app::arguments::Arguments;
@@ -106,7 +106,7 @@ impl RsMark {
         ctx: &CtxRef,
         frame: &mut Frame<'_>,
     ) -> InnerResponse<()> {
-        egui::TopPanel::top("top info panel").show(ctx, |ui| {
+        egui::TopBottomPanel::top("top info panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 egui::menu::menu(ui, "File ", |ui| {
                     if ui.button("Settings").clicked() {
@@ -242,7 +242,12 @@ impl epi::App for RsMark {
         }
     }
 
-    fn setup(&mut self, _ctx: &egui::CtxRef) {
+    fn setup(
+        &mut self,
+        _ctx: &egui::CtxRef,
+        _frame: &mut Frame<'_>,
+        _storage: Option<&dyn Storage>,
+    ) {
         self.image_cache.update();
         self.current_boxes = self.images[self.current_index.load(Ordering::SeqCst)].load_labels();
     }
@@ -548,7 +553,7 @@ impl RsMark {
 
 impl RsMark {
     fn display_names(&mut self, ctx: &CtxRef) {
-        egui::SidePanel::left("side panel", 200.0).show(ctx, |ui| {
+        egui::SidePanel::left("side panel").show(ctx, |ui| {
             egui::ScrollArea::auto_sized().show(ui, |ui| {
                 for i in 0..self.names.len() {
                     let checked = self.selected_name == i;
@@ -568,7 +573,7 @@ impl RsMark {
 
 impl RsMark {
     fn top_bar_file_menu(&mut self, ctx: &CtxRef, frame: &mut Frame<'_>) {
-        egui::TopPanel::top("top info panel").show(ctx, |ui| {
+        egui::TopBottomPanel::top("top info panel").show(ctx, |ui| {
             egui::menu::bar(ui, |ui| {
                 egui::menu::menu(ui, "File ", |ui| {
                     if ui.button("Label").clicked() {
