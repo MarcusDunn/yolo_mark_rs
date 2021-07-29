@@ -90,6 +90,11 @@ impl RsMark {
                     self.settings.scroll_thresh = new;
                 }
             }
+            ui.label("show cursor name");
+            ui.checkbox(
+                &mut self.settings.display_cursor_name,
+                "display_cursor_name",
+            )
         });
     }
 }
@@ -431,20 +436,12 @@ impl RsMark {
                         ui.label("try moving your mouse to force an update!");
                     }
                     Some(img) => {
-                        if img.size_usize().0 * img.size_usize().1 == img.data.len() {
-                            self.current_image = Some((
-                                frame.tex_allocator().alloc_srgba_premultiplied(
-                                    img.size_usize(),
-                                    img.data.as_slice(),
-                                ),
-                                img.size_vec2(),
-                            ));
-                        } else {
-                            ui.label(
-                                "something has gone catastrophically wrong, the app seems to \
-                                think its minimized, if you can see this please open an issue",
-                            );
-                        }
+                        self.current_image = Some((
+                            frame
+                                .tex_allocator()
+                                .alloc_srgba_premultiplied(img.size_usize(), img.data.as_slice()),
+                            img.size_vec2(),
+                        ));
                     }
                 }
             }
@@ -455,26 +452,28 @@ impl RsMark {
         let alpha = self.settings.cross_hair_alpha;
         if let Some(pos) = ctx.input().pointer.hover_pos() {
             if let Some(text) = self.names.get(self.selected_name) {
-                let rect = painter.text(
-                    pos,
-                    Align2::CENTER_BOTTOM,
-                    text,
-                    TextStyle::Heading,
-                    eframe::egui::Color32::BLACK,
-                );
-                painter.rect(
-                    rect,
-                    0.0,
-                    Color32::from_white_alpha(alpha),
-                    Stroke::default(),
-                );
-                painter.text(
-                    pos,
-                    Align2::CENTER_BOTTOM,
-                    text,
-                    TextStyle::Heading,
-                    eframe::egui::Color32::BLACK,
-                );
+                if self.settings.display_cursor_name {
+                    let rect = painter.text(
+                        pos,
+                        Align2::CENTER_BOTTOM,
+                        text,
+                        TextStyle::Heading,
+                        eframe::egui::Color32::BLACK,
+                    );
+                    painter.rect(
+                        rect,
+                        0.0,
+                        Color32::from_white_alpha(alpha),
+                        Stroke::default(),
+                    );
+                    painter.text(
+                        pos,
+                        Align2::CENTER_BOTTOM,
+                        text,
+                        TextStyle::Heading,
+                        eframe::egui::Color32::BLACK,
+                    );
+                }
             }
             painter.rect_stroke(
                 Rect::from_two_pos(

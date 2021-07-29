@@ -16,6 +16,7 @@ pub struct Settings {
     pub display_bounding_box_name: bool,
     pub scroll_thresh: f32,
     pub start_img_index: usize,
+    pub display_cursor_name: bool,
 }
 
 #[derive(serde::Deserialize)]
@@ -26,6 +27,7 @@ struct PartialSettings {
     display_bounding_box_name: Option<bool>,
     scroll_thresh: Option<f32>,
     start_img_index: Option<usize>,
+    display_cursor_name: Option<bool>
 }
 
 impl Partial<Settings> for PartialSettings {
@@ -44,6 +46,7 @@ impl Partial<Settings> for PartialSettings {
                 .unwrap_or(default.display_bounding_box_name),
             scroll_thresh: self.scroll_thresh.unwrap_or(default.scroll_thresh),
             start_img_index: self.start_img_index.unwrap_or(default.start_img_index),
+            display_cursor_name: self.display_cursor_name.unwrap_or(default.display_cursor_name)
         }
     }
 }
@@ -57,6 +60,7 @@ impl Default for Settings {
             display_bounding_box_name: true,
             scroll_thresh: 0.0,
             start_img_index: 0,
+            display_cursor_name: true
         }
     }
 }
