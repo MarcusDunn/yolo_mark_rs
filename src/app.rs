@@ -96,7 +96,15 @@ impl RsMark {
             ui.checkbox(
                 &mut self.settings.display_cursor_name,
                 "display_cursor_name",
-            )
+            );
+            ui.label("save interval duration (seconds)");
+            let mut save_inter = self.settings.save_interval_seconds.to_string();
+            if ui.text_edit_singleline(&mut save_inter).changed() {
+                if let Ok(new) = save_inter.parse() {
+                    println!("chaging!");
+                    self.settings.save_interval_seconds = new;
+                }
+            }
         });
     }
 }
@@ -274,7 +282,8 @@ impl epi::App for RsMark {
         self.current_boxes = self.images[self.current_index.load(Ordering::SeqCst)].load_labels();
     }
 
-    fn on_exit(&mut self) {
+    fn save(&mut self, _storage: &mut dyn Storage) {
+        println!("saving current index and settings");
         self.settings.start_img_index = self.current_index.load(Ordering::SeqCst);
         self.images[self.current_index.load(Ordering::SeqCst)]
             .save_labels(&self.current_boxes)
@@ -311,6 +320,10 @@ impl epi::App for RsMark {
 
     fn name(&self) -> &str {
         "RS Mark"
+    }
+
+    fn auto_save_interval(&self) -> std::time::Duration {
+        std::time::Duration::from_secs(self.settings.save_interval_seconds)
     }
 }
 
