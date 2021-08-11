@@ -13,6 +13,8 @@ use eframe::egui::{
 use eframe::epi::{Frame, Storage};
 use eframe::{egui, epi};
 
+use keyboard_mapping::EventTrigger;
+
 use crate::app::arguments::Arguments;
 use crate::app::bbox::{BBox, BBoxError};
 use crate::app::drag_status::DragStatus;
@@ -133,6 +135,18 @@ impl RsMark {
                 let resp = ui.add(
                     TextEdit::singleline(&mut self.current_image_input_text).desired_width(10.0),
                 );
+                if ctx.input().keys_down.iter().any(|key| {
+                    self.key_map.iter().any(|(action, value)| {
+                        matches!(action, Action::NameNumber(_))
+                            && if let EventTrigger::Key(some_key) = value {
+                                some_key == key
+                            } else {
+                                false
+                            }
+                    })
+                }) {
+                    resp.surrender_focus();
+                }
                 if resp.gained_focus() {
                     self.allow_number_shortcuts = false;
                 }

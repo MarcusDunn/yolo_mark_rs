@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 use std::convert::TryInto;
 use std::iter::FromIterator;
-use std::ops::Index;
+use std::ops::{Deref, Index};
 
 use eframe::egui::{CtxRef, Key};
 use eframe::epi::egui::PointerButton;
@@ -77,6 +77,14 @@ impl KeyboardMapping {
             EventTrigger::Key(k) => ctx.input().key_pressed(k),
             EventTrigger::PointerButton(pb) => ctx.input().pointer.button_down(pb),
         }
+    }
+}
+
+impl Deref for KeyboardMapping {
+    type Target = BTreeMap<Action, EventTrigger>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
