@@ -143,6 +143,14 @@ impl RsMark {
                 let resp = ui.add(
                     TextEdit::singleline(&mut self.current_image_input_text).desired_width(10.0),
                 );
+                ui.label(
+                    self.images[self.current_index.load(Ordering::SeqCst)]
+                        .as_path()
+                        .file_name()
+                        .unwrap()
+                        .to_str()
+                        .unwrap(),
+                );
                 if ctx.input().keys_down.iter().any(|key| {
                     self.key_map.iter().any(|(action, value)| {
                         matches!(action, Action::NameNumber(_))
