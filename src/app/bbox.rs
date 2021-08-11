@@ -172,7 +172,12 @@ impl BBox {
         selected: bool,
     ) {
         let rect = painter.text(
-            rect.min - Vec2::new(0.0, 20.0),
+            rect.min
+                - if rect.min.y > 40.0 {
+                    Vec2::new(0.0, 20.0)
+                } else {
+                    Vec2::new(0.0, 0.0)
+                },
             Align2::LEFT_TOP,
             &names[self.name],
             TextStyle::Heading,
