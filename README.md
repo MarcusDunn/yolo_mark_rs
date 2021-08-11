@@ -2,6 +2,7 @@
 
 I've drawn too many boxes in yolo_mark, its usable but has some rough edges:
 
+- dependent on opencv (which is a massive hassle to compile)
 - Always selects the larger box on hover (cannot delete inner annotations)
 - Slow with medium-large sized images
 - Left/right arrow increments/decrements both image and tag
@@ -9,6 +10,12 @@ I've drawn too many boxes in yolo_mark, its usable but has some rough edges:
 - No custom keybindings (my implementation still not ideal in this regard but will be improved on)
 - You can create 0 sized boxes
 - cannot delete 0 sized boxes without clearing all other annotations
+
+Other Labeling software is out there, (check out 
+[AlexeyAB list](https://github.com/AlexeyAB/darknet#how-to-mark-bounded-boxes-of-objects-and-create-annotation-files)) 
+for some great alternatives that may suit you best. However, I've found
+*__simplicity, speed and ease of install__* to be the most common dealbreakers for me.
+
 
 So I've resolved these + some quality of life features of my own and this is the result.
 
