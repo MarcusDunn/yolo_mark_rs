@@ -117,6 +117,25 @@ impl BBox {
         )
     }
 
+    pub(crate) fn from_two_points_relative(
+        name: usize,
+        Pos2 {
+            x: box_x1,
+            y: box_y1,
+        }: Pos2,
+        Pos2 {
+            x: box_x2,
+            y: box_y2,
+        }: Pos2,
+    ) -> Result<BBox, BBoxError> {
+        let rel_x = (box_x1 + box_x2) / 2.0;
+        let rel_y = (box_y1 + box_y2) / 2.0;
+        let rel_w = (box_x1 - box_x2).abs();
+        let rel_h = (box_y1 - box_y2).abs();
+
+        BBox::new(name, rel_w, rel_h, rel_x, rel_y)
+    }
+
     pub(crate) fn from_two_points(
         name: usize,
         Pos2 {
@@ -297,9 +316,17 @@ impl BBox {
             || !(0.0..=1.0).contains(&(y + height / 2.0))
             || !(0.0..=1.0).contains(&(y - height / 2.0))
         {
-            Err(BBoxError::InvalidField(
-                "there's a corner out of bounds!".to_string(),
-            ))
+            BBox::from_two_points_relative(
+                name,
+                Pos2 {
+                    x: (x + width / 2.0).clamp(0.0, 1.0),
+                    y: (y + height / 2.0).clamp(0.0, 1.0),
+                },
+                Pos2 {
+                    x: (x - width / 2.0).clamp(0.0, 1.0),
+                    y: (y - height / 2.0).clamp(0.0, 1.0),
+                },
+            )
         } else {
             Ok(BBox {
                 no_init_from_fields: (),

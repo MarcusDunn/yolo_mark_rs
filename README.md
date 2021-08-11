@@ -29,9 +29,7 @@ use case. Suggestions and polite feedback are welcome if you find something miss
 - [ ] Resize Boxes
 - [ ] Make trained network predict boxes and allow the user to correct them (VoTT style)
 - [ ] Show some annotation meta-data (labels per class and such)
-- [ ] Move to async tasks file IO and image resizing.
-- [ ] Label images outside local filesystem
-- [ ] Compile to WASM and run on web
+- [ ] GPU acceleration
 
 # Running
 
