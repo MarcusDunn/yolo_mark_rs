@@ -4,6 +4,7 @@
 
 use std::env;
 
+use colored::Colorize;
 use yolo_mark_rs::{wrangle_args, KeyboardMapping, RsMark};
 
 // When compiling natively:
@@ -17,7 +18,7 @@ fn main() {
             eframe::run_native(Box::new(app), native_options);
         }
         Err(err) => {
-            println!("{}", err);
+            println!("{}".red(), err);
         }
     }
 }

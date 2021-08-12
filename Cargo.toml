@@ -18,18 +18,4 @@ crossbeam = "0.8.0"
 num_cpus = "1.13.0"
 rand_chacha = "0.3.0"
 rand = "0.8.3"
-
-[dev-dependencies]
-quickcheck = "1"
-quickcheck_macros = "1"
-
-[profile.release]
-opt-level = 2 # fast and small wasm
-
-[patch.crates-io]
-
-# If you want to use the bleeding edge version of `egui`:
-# eframe = { git = "https://github.com/emilk/egui", branch = "master" }
-
-# If you fork https://github.com/emilk/egui you can test with:
-# eframe = { path = "../egui/eframe" }
+colored = "2.0.0"

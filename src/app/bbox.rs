@@ -345,35 +345,3 @@ impl BBox {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use quickcheck::{Arbitrary, Gen};
-    use quickcheck_macros::quickcheck;
-
-    use super::*;
-
-    #[quickcheck]
-    fn from_line_and_to_line_are_opposite(bbox: BBox) -> bool {
-        let and_back_again = BBox::try_from(bbox.to_string().as_str()).unwrap();
-        almost_eq(&bbox, &and_back_again)
-    }
-
-    fn almost_eq(bbox1: &BBox, bbox2: &BBox) -> bool {
-        (bbox1.height - bbox2.height) < 0.000001
-            && (bbox1.width - bbox2.width) < 0.000001
-            && (bbox1.x - bbox2.x) < 0.000001
-            && (bbox1.y - bbox2.y) < 0.000001
-            && bbox1.name == bbox2.name
-    }
-
-    impl Arbitrary for BBox {
-        fn arbitrary(generator: &mut Gen) -> Self {
-            let width = u8::arbitrary(generator).saturating_add(1) as f32 / 255.0;
-            let height = u8::arbitrary(generator).saturating_add(1) as f32 / 255.0;
-            let x = u8::arbitrary(generator) as f32 / 255.0;
-            let y = u8::arbitrary(generator) as f32 / 255.0;
-            BBox::new(usize::arbitrary(generator), width, height, x, y).unwrap()
-        }
-    }
-}
