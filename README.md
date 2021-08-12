@@ -17,7 +17,7 @@ for some great alternatives that may suit you best. However, I've found
 *__simplicity, speed and ease of install__* to be the most common dealbreakers for me.
 
 
-So I've resolved these + some quality of life features of my own and this is the result.
+So I've fixed these + some quality of life features of my own and this is the result.
 
 ![img.png](img.png)
 
