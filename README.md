@@ -2,7 +2,7 @@
 
 I've drawn too many boxes in yolo_mark, its usable but has some rough edges:
 
-- dependent on opencv (which is a massive hassle to compile)
+- dependent on opencv (which can be a hassle to compile)
 - Always selects the larger box on hover (cannot delete inner annotations)
 - Slow with medium-large sized images
 - Left/right arrow increments/decrements both image and tag
