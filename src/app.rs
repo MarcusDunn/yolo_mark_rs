@@ -105,6 +105,8 @@ impl RsMark {
                     self.settings.save_interval_seconds = new;
                 }
             }
+            ui.label("if checked, crosshair will always be the complementary color of the average color of the image");
+            ui.checkbox(&mut self.settings.dynamic_crosshair, "dynamic crosshair color")
         });
     }
 }
@@ -513,8 +515,11 @@ impl RsMark {
                 }
             }
             let (r, g, b, _) = image_color.to_tuple();
-            let crosshair_color =
-                Color32::from_rgba_premultiplied(255 - r, 255 - g, 255 - b, alpha);
+            let crosshair_color = if self.settings.dynamic_crosshair {
+                Color32::from_rgba_premultiplied(255 - r, 255 - g, 255 - b, alpha)
+            } else {
+                Color32::from_black_alpha(alpha)
+            };
             painter.rect_stroke(
                 Rect::from_two_pos(
                     Pos2 {

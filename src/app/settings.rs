@@ -19,6 +19,7 @@ pub struct Settings {
     pub start_img_index: usize,
     pub display_cursor_name: bool,
     pub save_interval_seconds: NonZeroU32,
+    pub dynamic_crosshair: bool,
 }
 
 #[derive(serde::Deserialize)]
@@ -31,6 +32,7 @@ struct PartialSettings {
     start_img_index: Option<usize>,
     display_cursor_name: Option<bool>,
     save_interval_seconds: Option<NonZeroU32>,
+    dynamic_crosshair: Option<bool>,
 }
 
 impl Partial<Settings> for PartialSettings {
@@ -55,6 +57,7 @@ impl Partial<Settings> for PartialSettings {
             save_interval_seconds: self
                 .save_interval_seconds
                 .unwrap_or(default.save_interval_seconds),
+            dynamic_crosshair: self.dynamic_crosshair.unwrap_or(default.dynamic_crosshair),
         }
     }
 }
@@ -70,6 +73,7 @@ impl Default for Settings {
             start_img_index: 0,
             display_cursor_name: true,
             save_interval_seconds: NonZeroU32::new(20).unwrap(),
+            dynamic_crosshair: false,
         }
     }
 }
