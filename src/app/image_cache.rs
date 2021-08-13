@@ -14,12 +14,12 @@ use image::{GenericImageView, ImageError};
 use crate::app::image_file;
 use crate::app::image_file::ImageFile;
 
-type PixelsMessage = Result<(ImageLookup, ImageData), ImageParseError>;
+type PixelsMessage = Result<(ImageLookup, ImageData, Color32), ImageParseError>;
 type ImageMessage = (ImageLookup, PathBuf);
 
 pub struct ImageCache {
     size: Arc<Mutex<Vec2>>,
-    cache: BTreeMap<ImageLookup, ImageData>,
+    cache: BTreeMap<ImageLookup, (ImageData, Color32)>,
     pixel_receiver: Receiver<PixelsMessage>,
     image_sender: Sender<ImageMessage>,
     queued: BTreeSet<ImageLookup>,
@@ -68,27 +68,25 @@ impl ImageCache {
             let arc_clone = arc.clone();
             thread::spawn(move || {
                 let thread_num = i;
-                println!("started worker thread {}", i);
                 loop {
                     match im_rx_clone.try_recv() {
-                        Ok((lookup, file)) => {
-                            println!("thread {} is trying to deal with {:?}", thread_num, file);
-                            match ImageFile::new(file) {
-                                Ok(img) => match img.as_image() {
-                                    Ok(img) => {
-                                        let Vec2 { x: w, y: h } =
-                                            { *arc_clone.lock().expect("lock was poisoned") };
-                                        let resized =
-                                            img.resize(w as u32, h as u32, FilterType::Nearest);
-                                        let pixels = resized
-                                            .pixels()
-                                            .map(|(.., p)| {
-                                                Color32::from_rgba_premultiplied(
-                                                    p.0[0], p.0[1], p.0[2], p.0[3],
-                                                )
-                                            })
-                                            .collect::<Vec<_>>();
-                                        let data = ImageData {
+                        Ok((lookup, file)) => match ImageFile::new(file) {
+                            Ok(img) => match img.as_image() {
+                                Ok(img) => {
+                                    let Vec2 { x: w, y: h } =
+                                        { *arc_clone.lock().expect("lock was poisoned") };
+                                    let resized =
+                                        img.resize(w as u32, h as u32, FilterType::Nearest);
+                                    let pixels = resized
+                                        .pixels()
+                                        .map(|(.., p)| {
+                                            Color32::from_rgba_premultiplied(
+                                                p.0[0], p.0[1], p.0[2], p.0[3],
+                                            )
+                                        })
+                                        .collect::<Vec<_>>();
+                                    let data =
+                                        ImageData {
                                             size: (
                                                 resized.dimensions().0.try_into().expect(
                                                     "dimensions.x did not fit into a usize",
@@ -99,29 +97,34 @@ impl ImageCache {
                                             ),
                                             data: pixels,
                                         };
-                                        println!(
-                                            "thread {} dealt with it successfully",
-                                            thread_num
+                                    let (r, g, b, a) =
+                                        data.data.iter().map(Color32::to_tuple).fold(
+                                            (0_u128, 0_u128, 0_u128, 0_u128),
+                                            |(ra, ba, ga, aa), (r, g, b, a)| {
+                                                (
+                                                    ra + r as u128,
+                                                    ba + b as u128,
+                                                    ga + g as u128,
+                                                    aa + a as u128,
+                                                )
+                                            },
                                         );
-                                        let send_result = px_tx_clone.send(Ok((lookup, data)));
-                                        if let Err(err) = send_result {
-                                            println!("failed to send {:?}", err);
-                                        }
+                                    let size = data.data.len() as u128;
+                                    let color = Color32::from_rgba_premultiplied(
+                                        (r / size) as u8,
+                                        (b / size) as u8,
+                                        (g / size) as u8,
+                                        (a / size) as u8,
+                                    );
+                                    println!("{:?}", color);
+                                    let send_result = px_tx_clone.send(Ok((lookup, data, color)));
+                                    if let Err(err) = send_result {
+                                        println!("failed to send {:?}", err);
                                     }
-                                    Err(err) => {
-                                        px_tx_clone
-                                            .send(Err(ImageParseError::ImageError(err)))
-                                            .unwrap_or_else(|err| {
-                                                panic!(
-                                                    "failed to send error {} from thread {}",
-                                                    err, thread_num
-                                                );
-                                            });
-                                    }
-                                },
+                                }
                                 Err(err) => {
                                     px_tx_clone
-                                        .send(Err(ImageParseError::ImageFileError(err)))
+                                        .send(Err(ImageParseError::ImageError(err)))
                                         .unwrap_or_else(|err| {
                                             panic!(
                                                 "failed to send error {} from thread {}",
@@ -129,13 +132,22 @@ impl ImageCache {
                                             );
                                         });
                                 }
+                            },
+                            Err(err) => {
+                                px_tx_clone
+                                    .send(Err(ImageParseError::ImageFileError(err)))
+                                    .unwrap_or_else(|err| {
+                                        panic!(
+                                            "failed to send error {} from thread {}",
+                                            err, thread_num
+                                        );
+                                    });
                             }
-                        }
+                        },
                         Err(TryRecvError::Disconnected) => break,
                         Err(TryRecvError::Empty) => thread::sleep(Duration::from_millis(100)),
                     }
                 }
-                println!("killing worker thread {}", i);
             });
         }
         ImageCache {
@@ -147,21 +159,20 @@ impl ImageCache {
         }
     }
 
-    pub fn get(&mut self, lookup: ImageLookup, files: &[ImageFile]) -> Option<&ImageData> {
+    pub fn get(
+        &mut self,
+        lookup: ImageLookup,
+        files: &[ImageFile],
+    ) -> Option<&(ImageData, Color32)> {
         self.update();
         if self.cache.len() > 50 {
-            println!("cleaning cache!");
             self.cache.retain(|ImageLookup { index }, _| {
                 let diff = if lookup.index.lt(index) {
                     index - lookup.index
                 } else {
                     lookup.index - index
                 };
-                let will_retain = diff < 25;
-                if !will_retain {
-                    println!("removing image {} from cache", index);
-                }
-                will_retain
+                diff < 25
             });
         }
         for i in 0..=(num_cpus::get() / 2) {
@@ -193,9 +204,8 @@ impl ImageCache {
     pub fn update(&mut self) {
         while let Ok(process_result) = self.pixel_receiver.try_recv() {
             match process_result {
-                Ok((lookup, pixels)) => {
-                    self.cache.insert(lookup, pixels);
-                    println!("cached {}", lookup.index);
+                Ok((lookup, pixels, avg_color)) => {
+                    self.cache.insert(lookup, (pixels, avg_color));
                     self.queued.retain(|q| *q != lookup);
                 }
                 Err(err) => {
@@ -206,7 +216,6 @@ impl ImageCache {
     }
 
     fn request(&self, request: ImageLookup, files: &[ImageFile]) {
-        println!("sending request for {:?}", request);
         match files.get(request.index) {
             None => {
                 println!("invalid request occurred with lookup {:?}", request);

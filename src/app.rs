@@ -43,7 +43,7 @@ pub struct RsMark {
     names: Vec<String>,
     selected_name: usize,
     image_cache: ImageCache,
-    current_image: Option<(TextureId, Vec2)>,
+    current_image: Option<(TextureId, Vec2, Color32)>,
     current_boxes: Vec<BBox>,
     drag: DragStatus,
     shortcut_buffer: Vec<(ZeroToNine, Instant)>,
@@ -291,7 +291,6 @@ impl epi::App for RsMark {
     }
 
     fn save(&mut self, _storage: &mut dyn Storage) {
-        println!("saving current index and settings");
         self.settings.start_img_index = self.current_index.load(Ordering::SeqCst);
         self.images[self.current_index.load(Ordering::SeqCst)]
             .save_labels(&self.current_boxes)
@@ -331,7 +330,7 @@ impl epi::App for RsMark {
     }
 
     fn auto_save_interval(&self) -> std::time::Duration {
-        std::time::Duration::from_secs(self.settings.save_interval_seconds)
+        std::time::Duration::from_secs(u64::from(self.settings.save_interval_seconds.get()))
     }
 }
 
@@ -410,7 +409,7 @@ impl RsMark {
             if self.image_cache.set_size(ui.available_size()) {
                 self.handle_index_change(0);
             }
-            if let Some((texture_id, size)) = self.current_image {
+            if let Some((texture_id, size, avg_color)) = self.current_image {
                 let img = Image::new(texture_id, size).sense(Sense::click_and_drag());
                 let img_resp = ui.add(img);
                 let rect = Rect {
@@ -456,7 +455,7 @@ impl RsMark {
                 }
                 let painter = &mut ui.painter_at(rect);
                 self.paint_boxes(&ui, painter);
-                self.draw_cursor(ctx, painter);
+                self.draw_cursor(ctx, painter, avg_color);
             } else {
                 let get_result = self.image_cache.get(
                     ImageLookup {
@@ -469,7 +468,7 @@ impl RsMark {
                         ui.label("Loading . . .");
                         ui.label("try moving your mouse to force an update!");
                     }
-                    Some(img) => {
+                    Some((img, avg_color)) => {
                         if !matches!(img.size_usize(), (0, _) | (_, 0)) {
                             self.current_image = Some((
                                 frame.tex_allocator().alloc_srgba_premultiplied(
@@ -477,6 +476,7 @@ impl RsMark {
                                     img.data.as_slice(),
                                 ),
                                 img.size_vec2(),
+                                *avg_color,
                             ));
                         }
                     }
@@ -485,7 +485,7 @@ impl RsMark {
         })
     }
 
-    fn draw_cursor(&mut self, ctx: &CtxRef, painter: &mut Painter) {
+    fn draw_cursor(&mut self, ctx: &CtxRef, painter: &mut Painter, image_color: Color32) {
         let alpha = self.settings.cross_hair_alpha;
         if let Some(pos) = ctx.input().pointer.hover_pos() {
             if let Some(text) = self.names.get(self.selected_name) {
@@ -512,6 +512,9 @@ impl RsMark {
                     );
                 }
             }
+            let (r, g, b, _) = image_color.to_tuple();
+            let crosshair_color =
+                Color32::from_rgba_premultiplied(255 - r, 255 - g, 255 - b, alpha);
             painter.rect_stroke(
                 Rect::from_two_pos(
                     Pos2 {
@@ -524,7 +527,7 @@ impl RsMark {
                     },
                 ),
                 0.0,
-                Stroke::new(1.0, Color32::from_white_alpha(alpha)),
+                Stroke::new(1.0, crosshair_color),
             );
             painter.rect_stroke(
                 Rect::from_two_pos(
@@ -538,7 +541,7 @@ impl RsMark {
                     },
                 ),
                 0.0,
-                Stroke::new(1.0, Color32::from_white_alpha(alpha)),
+                Stroke::new(1.0, crosshair_color),
             );
         }
     }

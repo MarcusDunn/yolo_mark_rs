@@ -4,11 +4,7 @@
 
 use std::env;
 
-use colored::Colorize;
 use yolo_mark_rs::{wrangle_args, KeyboardMapping, RsMark};
-
-// When compiling natively:
-#[cfg(not(target_arch = "wasm32"))]
 
 fn main() {
     match wrangle_args(env::args()) {
@@ -18,7 +14,7 @@ fn main() {
             eframe::run_native(Box::new(app), native_options);
         }
         Err(err) => {
-            println!("{}".red(), err);
+            println!("{}", err);
         }
     }
 }

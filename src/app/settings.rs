@@ -1,5 +1,6 @@
 use std::fs::File;
 use std::io::BufReader;
+use std::num::NonZeroU32;
 
 trait Partial<T>
 where
@@ -17,7 +18,7 @@ pub struct Settings {
     pub scroll_thresh: f32,
     pub start_img_index: usize,
     pub display_cursor_name: bool,
-    pub save_interval_seconds: u64,
+    pub save_interval_seconds: NonZeroU32,
 }
 
 #[derive(serde::Deserialize)]
@@ -29,7 +30,7 @@ struct PartialSettings {
     scroll_thresh: Option<f32>,
     start_img_index: Option<usize>,
     display_cursor_name: Option<bool>,
-    save_interval_seconds: Option<u64>,
+    save_interval_seconds: Option<NonZeroU32>,
 }
 
 impl Partial<Settings> for PartialSettings {
@@ -68,7 +69,7 @@ impl Default for Settings {
             scroll_thresh: 0.0,
             start_img_index: 0,
             display_cursor_name: true,
-            save_interval_seconds: 20,
+            save_interval_seconds: NonZeroU32::new(20).unwrap(),
         }
     }
 }
