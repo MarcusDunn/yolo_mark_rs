@@ -162,7 +162,7 @@ impl ImageCache {
     pub fn get(
         &mut self,
         lookup: ImageLookup,
-        files: &[ImageFile],
+        files: &[&ImageFile],
     ) -> Option<&(ImageData, Color32)> {
         self.update();
         if self.cache.len() > 50 {
@@ -215,7 +215,7 @@ impl ImageCache {
         }
     }
 
-    fn request(&self, request: ImageLookup, files: &[ImageFile]) {
+    fn request(&self, request: ImageLookup, files: &[&ImageFile]) {
         match files.get(request.index) {
             None => {
                 println!("invalid request occurred with lookup {:?}", request);

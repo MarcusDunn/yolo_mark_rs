@@ -50,6 +50,7 @@ pub enum Action {
     RemoveBox,
     NameNumber(ZeroToNine),
     Clear,
+    MarkAsSpecial,
 }
 
 pub enum EventTrigger {
@@ -91,6 +92,7 @@ impl Deref for KeyboardMapping {
 impl KeyboardMapping {
     fn default_mappings() -> Vec<(Action, EventTrigger)> {
         vec![
+            (Action::MarkAsSpecial, Key::M.into()),
             (Action::NextImage, Key::D.into()),
             (Action::PrevImage, Key::A.into()),
             (Action::NextName, Key::S.into()),

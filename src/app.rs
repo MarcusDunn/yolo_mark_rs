@@ -1,7 +1,8 @@
 use std::collections::btree_map::{BTreeMap, Entry};
 use std::convert::TryFrom;
-use std::fs::File;
-use std::io::{LineWriter, Write};
+use std::fs;
+use std::fs::{File, OpenOptions};
+use std::io::{BufRead, BufReader, LineWriter, Write};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Instant;
 pub use std::time::{Duration, SystemTime};
@@ -145,14 +146,21 @@ impl RsMark {
                 let resp = ui.add(
                     TextEdit::singleline(&mut self.current_image_input_text).desired_width(10.0),
                 );
+                let curr_image = &self.images[self.current_index.load(Ordering::SeqCst)];
                 ui.label(
-                    self.images[self.current_index.load(Ordering::SeqCst)]
+                    curr_image
+                        .img
                         .as_path()
                         .file_name()
                         .unwrap()
                         .to_str()
                         .unwrap(),
                 );
+                ui.label(if curr_image.marked {
+                    "MARKED"
+                } else {
+                    "UNMARKED"
+                });
                 if ctx.input().keys_down.iter().any(|key| {
                     self.key_map.iter().any(|(action, value)| {
                         matches!(action, Action::NameNumber(_))
@@ -236,6 +244,7 @@ impl RsMark {
         };
         let new_index = self.current_index.load(Ordering::SeqCst);
         self.images[prev_index]
+            .img
             .save_labels(&self.current_boxes)
             .unwrap_or_else(|err| panic!("error occurred while writing label {}", err));
         self.current_boxes = self
@@ -245,7 +254,7 @@ impl RsMark {
                 // restores old index value that we know is valid.
                 self.current_index.store(prev_index, Ordering::SeqCst);
                 reverted_index = true;
-                &self.images[prev_index]
+                &self.images[prev_index].img
             })
             .load_labels();
         self.current_image_input_text = {
@@ -289,12 +298,15 @@ impl epi::App for RsMark {
         _storage: Option<&dyn Storage>,
     ) {
         self.image_cache.update();
-        self.current_boxes = self.images[self.current_index.load(Ordering::SeqCst)].load_labels();
+        self.current_boxes = self.images[self.current_index.load(Ordering::SeqCst)]
+            .img
+            .load_labels();
     }
 
     fn save(&mut self, _storage: &mut dyn Storage) {
         self.settings.start_img_index = self.current_index.load(Ordering::SeqCst);
         self.images[self.current_index.load(Ordering::SeqCst)]
+            .img
             .save_labels(&self.current_boxes)
             .unwrap_or_else(|err| {
                 println!(
@@ -363,6 +375,38 @@ impl RsMark {
         if let Some(box_inx) = self.selected_box {
             if self.key_map.is_triggered(Action::RemoveBox, ctx) {
                 self.current_boxes.remove(box_inx);
+            }
+        }
+        if self.key_map.is_triggered(Action::MarkAsSpecial, ctx) {
+            let curr_image = &mut self.images[self.current_index.load(Ordering::SeqCst)];
+            if curr_image.marked {
+                let file = OpenOptions::new()
+                    .read(true)
+                    .write(true)
+                    .open("marked.txt")
+                    .unwrap();
+
+                let lines = BufReader::new(file)
+                    .lines()
+                    .map(std::result::Result::unwrap)
+                    .filter(|x| x.as_str() != curr_image.img.as_path().to_str().unwrap())
+                    .collect::<Vec<_>>()
+                    .join("\n");
+
+                fs::write("marked.txt", lines).expect("Can't write");
+                curr_image.marked = false;
+            } else {
+                let mut f = File::with_options()
+                    .create(true)
+                    .append(true)
+                    .open("marked.txt")
+                    .unwrap();
+                let file = &curr_image.img;
+                let buf = file.as_path();
+                let file_name = buf.to_str().unwrap();
+                f.write_all(file_name.as_bytes()).unwrap();
+                f.write_all(vec![b'\n'].as_slice()).unwrap();
+                curr_image.marked = true;
             }
         }
         if let Some((_, t)) = self.shortcut_buffer.last() {
@@ -463,7 +507,12 @@ impl RsMark {
                     ImageLookup {
                         index: self.current_index.load(Ordering::SeqCst),
                     },
-                    self.images.as_slice(),
+                    self.images
+                        .as_slice()
+                        .iter()
+                        .map(|it| &it.img)
+                        .collect::<Vec<_>>()
+                        .as_slice(),
                 );
                 match get_result {
                     None => {
