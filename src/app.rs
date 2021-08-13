@@ -50,6 +50,7 @@ pub struct RsMark {
     shortcut_buffer: Vec<(ZeroToNine, Instant)>,
     stats: Stats,
     allow_number_shortcuts: bool,
+    marked_file: String,
 }
 
 #[derive(Default)]
@@ -227,6 +228,13 @@ impl RsMark {
             shortcut_buffer: Vec::new(),
             stats: Stats::default(),
             allow_number_shortcuts: true,
+            marked_file: format!(
+                "marked_{}.txt",
+                SystemTime::now()
+                    .duration_since(SystemTime::UNIX_EPOCH)
+                    .unwrap_or_else(|_| Duration::new(0, 0))
+                    .as_secs()
+            ),
         }
     }
 
@@ -383,7 +391,7 @@ impl RsMark {
                 let file = OpenOptions::new()
                     .read(true)
                     .write(true)
-                    .open("marked.txt")
+                    .open(&self.marked_file)
                     .unwrap();
 
                 let lines = BufReader::new(file)
@@ -393,13 +401,13 @@ impl RsMark {
                     .collect::<Vec<_>>()
                     .join("\n");
 
-                fs::write("marked.txt", lines).expect("Can't write");
+                fs::write(&self.marked_file, lines).expect("Can't write");
                 curr_image.marked = false;
             } else {
                 let mut f = File::with_options()
                     .create(true)
                     .append(true)
-                    .open("marked.txt")
+                    .open(&self.marked_file)
                     .unwrap();
                 let file = &curr_image.img;
                 let buf = file.as_path();
