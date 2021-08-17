@@ -14,8 +14,6 @@ use eframe::egui::{
 use eframe::epi::{Frame, Storage};
 use eframe::{egui, epi};
 
-use keyboard_mapping::EventTrigger;
-
 use crate::app::arguments::Arguments;
 use crate::app::bbox::{BBox, BBoxError};
 use crate::app::drag_status::DragStatus;
@@ -543,7 +541,7 @@ impl RsMark {
                                     img.data.as_slice(),
                                 ),
                                 img.size_vec2(),
-                                *avg_color,
+                                avg_color.unwrap_or(Color32::WHITE),
                             ));
                         }
                     }

@@ -14,12 +14,12 @@ use image::{GenericImageView, ImageError};
 use crate::app::image_file;
 use crate::app::image_file::ImageFile;
 
-type PixelsMessage = Result<(ImageLookup, ImageData, Color32), ImageParseError>;
+type PixelsMessage = Result<(ImageLookup, ImageData, Option<Color32>), ImageParseError>;
 type ImageMessage = (ImageLookup, PathBuf);
 
 pub struct ImageCache {
     size: Arc<Mutex<Vec2>>,
-    cache: BTreeMap<ImageLookup, (ImageData, Color32)>,
+    cache: BTreeMap<ImageLookup, (ImageData, Option<Color32>)>,
     pixel_receiver: Receiver<PixelsMessage>,
     image_sender: Sender<ImageMessage>,
     queued: BTreeSet<ImageLookup>,
@@ -110,13 +110,14 @@ impl ImageCache {
                                             },
                                         );
                                     let size = data.data.len() as u128;
-                                    let color = Color32::from_rgba_premultiplied(
-                                        (r / size) as u8,
-                                        (b / size) as u8,
-                                        (g / size) as u8,
-                                        (a / size) as u8,
-                                    );
-                                    println!("{:?}", color);
+                                    let color = (size != 0).then(|| {
+                                        Color32::from_rgba_premultiplied(
+                                            (r / size) as u8,
+                                            (b / size) as u8,
+                                            (g / size) as u8,
+                                            (a / size) as u8,
+                                        )
+                                    });
                                     let send_result = px_tx_clone.send(Ok((lookup, data, color)));
                                     if let Err(err) = send_result {
                                         println!("failed to send {:?}", err);
@@ -163,7 +164,7 @@ impl ImageCache {
         &mut self,
         lookup: ImageLookup,
         files: &[&ImageFile],
-    ) -> Option<&(ImageData, Color32)> {
+    ) -> Option<&(ImageData, Option<Color32>)> {
         self.update();
         if self.cache.len() > 50 {
             self.cache.retain(|ImageLookup { index }, _| {
