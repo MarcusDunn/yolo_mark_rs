@@ -163,14 +163,22 @@ impl RsMark {
                     "UNMARKED"
                 });
                 if ctx.input().keys_down.iter().any(|key| {
-                    self.key_map.iter().any(|(action, value)| {
-                        matches!(action, Action::NameNumber(_))
-                            && if let EventTrigger::Key(some_key) = value {
-                                some_key == key
-                            } else {
-                                false
-                            }
-                    })
+                    !matches!(
+                        key,
+                        Key::Num0
+                            | Key::Num1
+                            | Key::Num2
+                            | Key::Num3
+                            | Key::Num4
+                            | Key::Num5
+                            | Key::Num6
+                            | Key::Num7
+                            | Key::Num8
+                            | Key::Num9
+                            | Key::Backspace
+                            | Key::ArrowLeft
+                            | Key::ArrowRight
+                    )
                 }) {
                     resp.surrender_focus();
                 }
