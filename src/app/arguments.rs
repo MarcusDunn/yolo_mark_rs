@@ -6,7 +6,7 @@ use std::fmt::{Display, Formatter};
 use std::fs::{File, ReadDir};
 use std::io::{BufRead, BufReader};
 use std::num::ParseIntError;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::app::images::Images;
 
@@ -38,10 +38,11 @@ impl Display for ArgumentError {
 pub struct Arguments {
     pub image_dir: Images,
     pub names: Vec<String>,
+    pub names_dir: PathBuf,
 }
 
 impl Arguments {
-    fn new(image_dir: ReadDir, names: Vec<String>) -> Arguments {
+    fn new(image_dir: ReadDir, names: Vec<String>, names_dir: PathBuf) -> Arguments {
         let images = image_dir
             .map(|r| r.expect("failed to read a directory entry"))
             .map(|r| r.try_into())
@@ -54,6 +55,7 @@ impl Arguments {
         Arguments {
             image_dir: images,
             names,
+            names_dir,
         }
     }
 }
@@ -96,6 +98,9 @@ pub fn wrangle_args(args: Args) -> Result<Arguments, ArgumentError> {
                 Ok(dir) => dir,
                 Err(err) => return Err(ArgumentError::ReadError(err.to_string())),
             };
+            let names_directory = names
+                .parent()
+                .expect("names file must have a parent directory");
             let names = match File::open(names) {
                 Ok(f) => match BufReader::new(f)
                     .lines()
@@ -106,7 +111,11 @@ pub fn wrangle_args(args: Args) -> Result<Arguments, ArgumentError> {
                 },
                 Err(err) => return Err(ArgumentError::ReadError(err.to_string())),
             };
-            Ok(Arguments::new(images_directory, names))
+            Ok(Arguments::new(
+                images_directory,
+                names,
+                PathBuf::from(names_directory),
+            ))
         } else {
             Err(ArgumentError::InvalidFileType(format!(
                 "{} is not a names file",

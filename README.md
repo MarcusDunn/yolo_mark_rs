@@ -11,15 +11,27 @@ I've drawn too many boxes in yolo_mark, its usable but has some rough edges:
 - You can create 0 sized boxes
 - cannot delete 0 sized boxes without clearing all other annotations
 
-Other Labeling software is out there, (check out 
-[AlexeyAB list](https://github.com/AlexeyAB/darknet#how-to-mark-bounded-boxes-of-objects-and-create-annotation-files)) 
+Other Labeling software is out there, (check out
+[AlexeyAB list](https://github.com/AlexeyAB/darknet#how-to-mark-bounded-boxes-of-objects-and-create-annotation-files))
 for some great alternatives that may suit you best. However, I've found
 *__simplicity, speed and ease of install__* to be the most common dealbreakers for me.
-
 
 So I've fixed these + some quality of life features of my own and this is the result.
 
 ![img.png](img.png)
+
+# Features
+
+- Multikey tag shortcuts.
+    - You can press 1 followed by 2 to go jump to tag 12. this is useful when one has more than 10 labels.
+- "Marking" Images
+    - Press `m` to add (or remove) an image path to a file called marked_\<timestamp\>.txt. I find this useful for
+      marking images to be removed from the dataset without breaking the labeling workflow. its then trival to write a
+      script to do what you wish with the marked images.
+- Fast
+    - There are constantly worker threads resizing images in the background and caching them so you can scroll full
+      sized images blazingly fast. This consumes a lot of CPU work when resizing or on startup, but idles at nearly 0
+      when there is no work to be done.
 
 ---
 
@@ -67,6 +79,7 @@ For other distros installing these dependencies is left as an exercise to the re
 - `D` for next.
 - `C` clears all tags
 - `R` removes the one you are currently hovered over (highlighted in white)
+- `M` marks an image (see [features](#features))
 
 You can also scroll names with mousewheel (or however you poor trackpad people scroll)
 as well as type out the index of the name you want to select (the timing threshold of which can be changed in settings)
@@ -75,4 +88,9 @@ as well as type out the index of the name you want to select (the timing thresho
 
 - Despite an image being loaded, it will not display until an event occurs forcing an update.
 - Does not respect exif data (such as rotation)
+- On Windows due to issue with imgui trying to persist window size, if you close the app while its minimized, when you
+  open it back up it will start with a zero-sized window that cannot be scaled up. for now you can resolve this by
+  removing the replacing `eframe = { version = "0.13.0", features = ["persistence"] }` with
+  `eframe = { version = "0.13.0" }` which prevents the bug at the cost of not having settings files saved at regular
+  intervals (which includes the image you left off from)
 

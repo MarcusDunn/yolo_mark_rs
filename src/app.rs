@@ -3,6 +3,7 @@ use std::convert::TryFrom;
 use std::fs;
 use std::fs::{File, OpenOptions};
 use std::io::{BufRead, BufReader, LineWriter, Write};
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::Instant;
 pub use std::time::{Duration, SystemTime};
@@ -48,7 +49,7 @@ pub struct RsMark {
     shortcut_buffer: Vec<(ZeroToNine, Instant)>,
     stats: Stats,
     allow_number_shortcuts: bool,
-    marked_file: String,
+    marked_file: PathBuf,
 }
 
 #[derive(Default)]
@@ -101,7 +102,6 @@ impl RsMark {
             let mut save_inter = self.settings.save_interval_seconds.to_string();
             if ui.text_edit_singleline(&mut save_inter).changed() {
                 if let Ok(new) = save_inter.parse() {
-                    println!("chaging!");
                     self.settings.save_interval_seconds = new;
                 }
             }
@@ -213,10 +213,27 @@ mod bbox;
 
 impl RsMark {
     #[must_use]
-    pub fn yolo(Arguments { image_dir, names }: Arguments, key_map: KeyboardMapping) -> RsMark {
+    pub fn yolo(
+        Arguments {
+            image_dir,
+            names,
+            names_dir,
+        }: Arguments,
+        key_map: KeyboardMapping,
+    ) -> RsMark {
         println!("found {} images!", image_dir.len());
         let settings = Settings::from_file().unwrap_or_default();
         let start_index = usize::min(image_dir.len() - 1, settings.start_img_index);
+        let marked_file = names_dir.join(Path::new(
+            format!(
+                "marked_{}.txt",
+                SystemTime::now()
+                    .duration_since(SystemTime::UNIX_EPOCH)
+                    .unwrap_or_else(|_| Duration::new(0, 0))
+                    .as_secs()
+            )
+            .as_str(),
+        ));
         RsMark {
             page: Page::Label,
             settings,
@@ -234,13 +251,7 @@ impl RsMark {
             shortcut_buffer: Vec::new(),
             stats: Stats::default(),
             allow_number_shortcuts: true,
-            marked_file: format!(
-                "marked_{}.txt",
-                SystemTime::now()
-                    .duration_since(SystemTime::UNIX_EPOCH)
-                    .unwrap_or_else(|_| Duration::new(0, 0))
-                    .as_secs()
-            ),
+            marked_file,
         }
     }
 
