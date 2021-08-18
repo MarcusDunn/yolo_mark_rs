@@ -18,7 +18,7 @@ for some great alternatives that may suit you best. However, I've found
 
 So I've fixed these + some quality of life features of my own and this is the result.
 
-![img_1.png](img_1.png)!
+![img_1.png](img_1.png)
 
 # Features
 
