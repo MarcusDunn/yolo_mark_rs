@@ -20,7 +20,7 @@ So I've fixed these + some quality of life features of my own and this is the re
 
 ![img_1.png](img_1.png)
 
-# Features
+# Neat Features
 
 - Multikey tag shortcuts.
     - You can press 1 followed by 2 to go jump to tag 12. this is useful when one has more than 10 labels.
@@ -29,9 +29,7 @@ So I've fixed these + some quality of life features of my own and this is the re
       marking images to be removed from the dataset without breaking the labeling workflow. its then trival to write a
       script to do what you wish with the marked images.
 - Fast
-    - There are constantly worker threads resizing images in the background and caching them so you can scroll full
-      sized images blazingly fast. This consumes a lot of CPU work when resizing or on startup, but idles at nearly 0
-      when there is no work to be done.
+    - Just try to scroll faster than the images are resized and displayed.
 
 ---
 
@@ -46,9 +44,9 @@ use case. Suggestions and polite feedback are welcome if you find something miss
 - [X] Scroll to change name
 - [ ] Drag boxes
 - [ ] Resize Boxes
-- [ ] Make trained network predict boxes and allow the user to correct them (VoTT style)
-- [ ] Show some annotation meta-data (labels per class and such)
-- [ ] GPU acceleration
+- [ ] Make trained network predict boxes and allow the user to correct them
+- [ ] Show some annotation meta-data
+- [ ] GPU acceleration?
 
 # Running
 
@@ -65,11 +63,11 @@ __Compile and Run:__\
 Once I am updating this less frequently I'll make a point of releasing binaries for Windows and Mac.
 
 On Linux there is also some extra libs needed for [egui](https://github.com/emilk/egui) (the graphics library this is
-built on) to work; Debian-based distros you can run the following
+built on) to work; Debian-based distros you can run the following.
 
 `sudo apt-get install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libspeechd-dev libxkbcommon-dev`
 
-For other distros installing these dependencies is left as an exercise to the reader
+For other distros installing these dependencies is left as an exercise to the reader.
 
 # Keybindings
 
