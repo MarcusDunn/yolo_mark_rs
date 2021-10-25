@@ -14,7 +14,7 @@ I've drawn too many boxes in yolo_mark, its usable but has some rough edges:
 Other Labeling software is out there, (check out
 [AlexeyAB list](https://github.com/AlexeyAB/darknet#how-to-mark-bounded-boxes-of-objects-and-create-annotation-files))
 for some great alternatives that may suit you best. However, I've found
-*__simplicity, speed and ease of install__* to be the most common dealbreakers for me.
+*__simplicity, speed and ease of install__* to be the most common deal-breakers for me.
 
 So I've fixed these + some quality of life features of my own and this is the result.
 
@@ -77,7 +77,7 @@ For other distros installing these dependencies is left as an exercise to the re
 - `D` for next.
 - `C` clears all tags
 - `R` removes the one you are currently hovered over (highlighted in white)
-- `M` marks an image (see [features](#features))
+- `M` marks an image (see [features](#neat-features))
 
 You can also scroll names with mousewheel (or however you poor trackpad people scroll)
 as well as type out the index of the name you want to select (the timing threshold of which can be changed in settings)

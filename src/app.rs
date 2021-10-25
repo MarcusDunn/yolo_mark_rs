@@ -683,7 +683,7 @@ impl RsMark {
 impl RsMark {
     fn display_names(&mut self, ctx: &CtxRef) {
         egui::SidePanel::left("side panel").show(ctx, |ui| {
-            egui::ScrollArea::auto_sized().show(ui, |ui| {
+            egui::ScrollArea::vertical().show(ui, |ui| {
                 for i in 0..self.names.len() {
                     let checked = self.selected_name == i;
                     let names_resp =

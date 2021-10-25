@@ -1,5 +1,4 @@
 use core::fmt;
-use std::convert::TryInto;
 use std::env::Args;
 use std::ffi::OsStr;
 use std::fmt::{Display, Formatter};
@@ -45,7 +44,7 @@ impl Arguments {
     fn new(image_dir: ReadDir, names: Vec<String>, names_dir: PathBuf) -> Arguments {
         let images = image_dir
             .map(|r| r.expect("failed to read a directory entry"))
-            .map(|r| r.try_into())
+            .map(std::convert::TryInto::try_into)
             .filter_map(std::result::Result::ok)
             .collect::<Images>();
         assert!(

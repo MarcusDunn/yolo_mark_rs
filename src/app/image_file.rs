@@ -121,7 +121,7 @@ impl ImageFile {
             .map(|ext| {
                 SUPPORTED_IMAGE_TYPES
                     .iter()
-                    .map(|str| OsStr::new(str))
+                    .map(OsStr::new)
                     .any(|x| x == ext)
             })
             .unwrap_or_default();

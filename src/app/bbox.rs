@@ -188,7 +188,7 @@ impl BBox {
             },
         );
         if selected {
-            painter.rect(rect, 0.0, Color32::BLACK, Stroke::default())
+            painter.rect(rect, 0.0, Color32::BLACK, Stroke::default());
         }
         painter.text(
             rect.min,
@@ -238,27 +238,27 @@ impl BBox {
             x: rect.min.x + rect.width(),
             y: rect.min.y + rect.height(),
         };
-        let thicc = Vec2::new(thickness / 2.0, thickness / 2.0);
+        let thick = Vec2::new(thickness / 2.0, thickness / 2.0);
         painter.rect(
-            Rect::from_two_pos(bot_right + thicc, bot_left - thicc),
+            Rect::from_two_pos(bot_right + thick, bot_left - thick),
             1.0,
             color,
             Stroke::default(),
         );
         painter.rect(
-            Rect::from_two_pos(top_left + thicc, bot_left - thicc),
+            Rect::from_two_pos(top_left + thick, bot_left - thick),
             1.0,
             color,
             Stroke::default(),
         );
         painter.rect(
-            Rect::from_two_pos(bot_right + thicc, top_right - thicc),
+            Rect::from_two_pos(bot_right + thick, top_right - thick),
             1.0,
             color,
             Stroke::default(),
         );
         painter.rect(
-            Rect::from_two_pos(top_right + thicc, top_left - thicc),
+            Rect::from_two_pos(top_right + thick, top_left - thick),
             1.0,
             color,
             Stroke::default(),
@@ -285,12 +285,12 @@ impl BBox {
 impl BBox {
     fn colour(name: usize) -> [u8; 3] {
         let mut rng = ChaCha8Rng::seed_from_u64(name as u64);
-        let h = rng.gen::<u8>() as f32 / 255.0;
+        let h = f32::from(rng.gen::<u8>()) / 255.0;
         Hsva {
             h,
             s: 1.0,
             v: 1.0,
-            a: 0 as f32,
+            a: 0.0,
         }
         .to_srgb()
     }
