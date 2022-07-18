@@ -1,4 +1,3 @@
-#![feature(with_options)]
 #![forbid(unsafe_code)]
 #![warn(clippy::pedantic, rust_2018_idioms)]
 

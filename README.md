@@ -50,17 +50,10 @@ use case. Suggestions and polite feedback are welcome if you find something miss
 
 # Running
 
-I recommend installing the whole [toolchain](https://rustup.rs/) if you do not have a rust compiler already. Currently,
-only runs on Nightly (Once [65439](https://github.com/rust-lang/rust/issues/65439) is on stable, this will no longer be
-the case)
-
-__Install Nightly:__\
-`rustup toolchain install nightly`
+I recommend installing the whole [toolchain](https://rustup.rs/) if you do not have a rust compiler already.
 
 __Compile and Run:__\
 `cargo run --release <path to images> <path to names file>`
-
-Once I am updating this less frequently I'll make a point of releasing binaries for Windows and Mac.
 
 On Linux there is also some extra libs needed for [egui](https://github.com/emilk/egui) (the graphics library this is
 built on) to work; Debian-based distros you can run the following.

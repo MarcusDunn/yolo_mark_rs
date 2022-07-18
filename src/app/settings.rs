@@ -80,7 +80,7 @@ impl Default for Settings {
 
 impl Settings {
     pub(crate) fn from_file() -> std::io::Result<Settings> {
-        let f = File::with_options()
+        let f = File::options()
             .read(true)
             .write(false)
             .open("settings.json")?;

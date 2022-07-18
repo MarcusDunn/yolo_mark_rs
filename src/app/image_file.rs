@@ -86,7 +86,7 @@ impl ImageFile {
             Some(stem) => stem,
         };
         let txt_path = format!("{}/{}.txt", parent, stem);
-        let f = File::with_options()
+        let f = File::options()
             .create(true)
             .write(true)
             .open(&txt_path)?;

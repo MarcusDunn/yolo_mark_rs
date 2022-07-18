@@ -318,7 +318,7 @@ impl epi::App for RsMark {
 
     fn setup(
         &mut self,
-        _ctx: &egui::CtxRef,
+        _ctx: &CtxRef,
         _frame: &mut Frame<'_>,
         _storage: Option<&dyn Storage>,
     ) {
@@ -339,7 +339,7 @@ impl epi::App for RsMark {
                     self.current_boxes, err
                 );
             });
-        match File::with_options()
+        match File::options()
             .create(true)
             .write(true)
             .open("settings.json")
@@ -368,8 +368,8 @@ impl epi::App for RsMark {
         "RS Mark"
     }
 
-    fn auto_save_interval(&self) -> std::time::Duration {
-        std::time::Duration::from_secs(u64::from(self.settings.save_interval_seconds.get()))
+    fn auto_save_interval(&self) -> Duration {
+        Duration::from_secs(u64::from(self.settings.save_interval_seconds.get()))
     }
 }
 
@@ -413,7 +413,7 @@ impl RsMark {
 
                 let lines = BufReader::new(file)
                     .lines()
-                    .map(std::result::Result::unwrap)
+                    .map(Result::unwrap)
                     .filter(|x| x.as_str() != curr_image.img.as_path().to_str().unwrap())
                     .collect::<Vec<_>>()
                     .join("\n");
@@ -421,7 +421,7 @@ impl RsMark {
                 fs::write(&self.marked_file, lines).expect("Can't write");
                 curr_image.marked = false;
             } else {
-                let mut f = File::with_options()
+                let mut f = File::options()
                     .create(true)
                     .append(true)
                     .open(&self.marked_file)
@@ -476,7 +476,7 @@ impl RsMark {
 
 impl RsMark {
     fn display_images(&mut self, ctx: &CtxRef, frame: &mut Frame<'_>) -> InnerResponse<()> {
-        egui::CentralPanel::default().show(ctx, |ui| {
+        CentralPanel::default().show(ctx, |ui| {
             if self.image_cache.set_size(ui.available_size()) {
                 self.handle_index_change(0);
             }
@@ -571,7 +571,7 @@ impl RsMark {
                         Align2::CENTER_BOTTOM,
                         text,
                         TextStyle::Heading,
-                        eframe::egui::Color32::BLACK,
+                        Color32::BLACK,
                     );
                     painter.rect(
                         rect,
@@ -584,7 +584,7 @@ impl RsMark {
                         Align2::CENTER_BOTTOM,
                         text,
                         TextStyle::Heading,
-                        eframe::egui::Color32::BLACK,
+                        Color32::BLACK,
                     );
                 }
             }
